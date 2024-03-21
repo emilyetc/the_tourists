@@ -20,7 +20,7 @@ os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
 LOCAL_MYSQL_USER = "root"
 LOCAL_MYSQL_USER_PASSWORD = "info4300"
 LOCAL_MYSQL_PORT = 3306
-LOCAL_MYSQL_DATABASE = "kardashiandb"
+LOCAL_MYSQL_DATABASE = "info4300"
 
 mysql_engine = MySQLDatabaseHandler(
     LOCAL_MYSQL_USER, LOCAL_MYSQL_USER_PASSWORD, LOCAL_MYSQL_PORT, LOCAL_MYSQL_DATABASE
@@ -31,7 +31,6 @@ mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
-
 
 def process_text(written_text):
     """remove stop words from the written text, transforms relevant words into a dictionary"""
@@ -119,27 +118,21 @@ def hotel_search(city, rankinglst, amenities, written_text):
 @app.route("/")
 def home():
     return render_template("base.html", title="sample html")
-
-
+cities_data = []
+def poss_cities():
+    global cities_data
+    query_sql = f"""SELECT DISTINCT locality FROM reviews"""
+    res = mysql_engine.query_selector(query_sql).all()
+    res = [tup[0] for tup in res]
+    cities_data = res
+poss_cities()
 @app.route("/cities")
 def cities_search():
+    global cities_data
     query = request.args.get("query", "")
-    # use sql database to get possible results, next line is just a placeholder
-    cities_data = [
-        "New York",
-        "Los Angeles",
-        "Chicago",
-        "Houston",
-        "Phoenix",
-        "Philadelphia",
-        "San Antonio",
-        "San Diego",
-        "Dallas",
-        "San Jose",
-    ]
     matched_cities = [city for city in cities_data if query.lower() in city.lower()]
+    print(jsonify(matched_cities))
     return jsonify(matched_cities)
-
 
 if "DB_NAME" not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)
