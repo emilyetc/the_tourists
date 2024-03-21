@@ -9,15 +9,21 @@
 
 <body>
     <div class="full-body-container">
+        <div id="banner">
+            <img src="{{ url_for('static', filename='images/banner.png') }}"
+                alt="text bubble with blue background and green text that says Globe Trotter with airplane flying out">
+        </div>
         <div class="top-text">
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
                 <input type="text" placeholder="Search for a city" id="cityInput">
+
+            </div>
+            <div id="suggestions">
+
             </div>
         </div>
-        <div id="suggestions">
 
-        </div>
     </div>
 
     <script src="{{ url_for('static', filename='searchbar.js') }}">
