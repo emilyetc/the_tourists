@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 
@@ -41,6 +41,14 @@ def home():
 def episodes_search():
     text = request.args.get("title")
     return sql_search(text)
+
+@app.route("/cities")
+def cities_search():
+    query = request.args.get('query', '')
+    #use sql database to get possible results, next line is just a placeholder
+    cities_data = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+    matched_cities = [city for city in cities_data if query.lower() in city.lower()]
+    return jsonify(matched_cities)
 
 if 'DB_NAME' not in os.environ:
     app.run(debug=True,host="0.0.0.0",port=5000)
