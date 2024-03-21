@@ -1,5 +1,11 @@
 import json
 import os
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from collections import defaultdict
+from numpy import dot
+from numpy.linalg import norm
+
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
@@ -27,25 +33,92 @@ app = Flask(__name__)
 CORS(app)
 
 
-# Sample search, the LIKE operator in this case is hard-coded,
-# but if you decide to use SQLAlchemy ORM framework,
-# there's a much better and cleaner way to do this
-def sql_search(episode):
-    query_sql = f"""SELECT * FROM episodes WHERE LOWER( title ) LIKE '%%{episode.lower()}%%' limit 10"""
-    keys = ["id", "title", "descr"]
-    data = mysql_engine.query_selector(query_sql)
-    return json.dumps([dict(zip(keys, i)) for i in data])
+def process_text(written_text):
+    """remove stop words from the written text, transforms relevant words into a dictionary"""
+    filter_out = set(stopwords.words("english"))
+    tokenized = word_tokenize(written_text)
+    filtered = [w for w in tokenized if not w.lower() in filter_out]
+    output = defaultdict(int)
+    for val in filtered:
+        output[val] += 1
+    return output
+
+
+def process_review(review, target):
+    """given a review, returns a dictionary where the keys are the strings in set target
+    and the values count the number of target strings in the review"""
+    output = defaultdict(int)
+    review = word_tokenize(review)
+    for val in review:
+        val = val.lower()
+        if val in target:
+            output[val] += 1
+    return output
+
+
+def hotel_search(city, rankinglst, amenities, written_text):
+    """city = target city, rankinglst = a list of user's preferences with index = 0
+    being the most important, amenities = target amenities, written_text =
+    user's written input
+    """
+
+    # formatting user input
+    written_dict = process_text(written_text)
+    written_vec = [written_dict[val] for val in written_dict]
+
+    # selecting hotels within a city (will add amenities later)
+    query_sql = f"""SELECT * FROM reviews WHERE locality = {city}"""
+    review_data = mysql_engine.query_selector(query_sql)
+
+    # selecting rankings wtihin a city
+    query_sql = f"""SELECT * FROM rankings WHERE locality = {city}"""
+    ranking_data = mysql_engine.query_selector(query_sql)
+
+    # tracks the highest score so far
+    scoretracker = defaultdict(int)
+    # tracks the index of the highest score so far
+    indextracker = dict()
+    
+    rankingtracker = dict()
+    # creating dict to index into rankings column easily
+    rankingsindex = {'service': 0, 'cleanliness': 1, 'value': 2, 'location': 3, 'sleep_quality': 4, 'rooms': 5}
+    # calculate rankings score
+    for row in range(len(ranking_data)):
+        # calculate score
+        score = 0
+        for val in range(len(rankinglst)):
+            score += (6 - val) * ranking_data[row][rankingsindex[rankinglst[val]]]
+        key = (ranking_data[row][0], ranking_data[row][1])
+        rankingtracker[key] = score
+
+    # for each item in data, calculate the review cosine similarity and add the rankings score; store it in dictionary
+    for row in range(len(review_data)):
+        # calculating review cosine similarity
+        review_dict = process_review(review_data[row][1])
+        review_vec = [review_dict[val] for val in written_dict]
+        cos = dot(written_vec, review_vec)/(norm(written_vec)*norm(review_vec))
+        key = (review_data[row][5], review_data[row][6])
+        if cos + rankingtracker[key] > scoretracker[key]:
+            scoretracker[key] = scoretracker[key], cos + rankingtracker[key]
+            indextracker[key] = row
+
+    target = []
+    # extract the top 3 (can change) and return
+    top_n = 3
+    for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
+        target.append(key)
+
+    # this isn't right, only returns the columns in the review data (not sure if that's what we want)
+    outputdata = [review_data[indextracker[key]] for key in target]
+
+
+    keys = ["ratings", "title", "text", "author", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
+    return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 
 @app.route("/")
 def home():
     return render_template("base.html", title="sample html")
-
-
-@app.route("/episodes")
-def episodes_search():
-    text = request.args.get("title")
-    return sql_search(text)
 
 
 @app.route("/cities")
