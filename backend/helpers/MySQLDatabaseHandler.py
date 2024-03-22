@@ -25,7 +25,10 @@ class MySQLDatabaseHandler(object):
         conn = self.lease_connection()
         if type(query) == list:
             for i in query:
-                conn.execute(i)
+                try:
+                    conn.execute(i)
+                except:
+                    pass
         else:
             conn.execute(query)
         
