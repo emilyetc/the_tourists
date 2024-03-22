@@ -148,7 +148,7 @@ def cities_search():
     global cities_data
     query = request.args.get("query", "")
     matched_cities = [city for city in cities_data if query.lower() in city.lower()]
-    print(jsonify(matched_cities))
+    # print(jsonify(matched_cities))
     return jsonify(matched_cities)
 
 @app.route("/find_hotels")
@@ -159,7 +159,6 @@ def find_hotels():
     prompt = request.args.get('promptDescription','')
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
-    
     resp = hotel_search(city, rankings, None, prompt)
     return resp
 
