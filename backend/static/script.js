@@ -72,6 +72,7 @@ function submit_form() {
   var formData = new URLSearchParams();
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
+  console.log(rankings);
   formData.append('promptDescription', promptDescription);
   const response = fetch("/find_hotels?" + formData.toString())
 }

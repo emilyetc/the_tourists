@@ -54,12 +54,18 @@ def process_review(review, target):
             output[val] += 1
     return output
 
+def lstparser(rankinglst):
+    temp = rankinglst[0][1:-1]
+    output = temp.split(',')
+    output = [word[1:-1].lower() for word in output]
+    return output
 
 def hotel_search(city, rankinglst, amenities, written_text):
-    """city = target city, rankinglst = a list of user's preferences with index = 0
+    """city = target city, rankinglst = a string list of user's preferences with index = 0
     being the most important, amenities = target amenities, written_text =
     user's written input
     """
+    rankinglst = lstparser(rankinglst)
     nltk.download('stopwords')
     nltk.download('punkt')
     # formatting user input
@@ -69,48 +75,55 @@ def hotel_search(city, rankinglst, amenities, written_text):
     # selecting hotels within a city (will add amenities later)
     query_sql = f"""SELECT * FROM reviews WHERE locality = '{city}'"""
     review_data = mysql_engine.query_selector(query_sql)
-
+    review_data = review_data.all()
     # selecting rankings wtihin a city
     query_sql = f"""SELECT * FROM rankings WHERE locality = '{city}'"""
     ranking_data = mysql_engine.query_selector(query_sql)
-
+    ranking_data = ranking_data.all()
+    # print(ranking_data)
     # tracks the highest score so far
     scoretracker = defaultdict(int)
     # tracks the index of the highest score so far
     indextracker = dict()
-    
+    # print(rankinglst)
     rankingtracker = dict()
     # creating dict to index into rankings column easily
-    rankingsindex = {'service': 0, 'cleanliness': 1, 'value': 2, 'location': 3, 'sleep_quality': 4, 'rooms': 5}
+    rankingsindex = {'service': 0, 'cleanliness': 1, 'value': 2, 'location': 3, 'sleep quality': 4, 'rooms': 5}
     # calculate rankings score
     for row in range(len(ranking_data)):
         # calculate score
         score = 0
         for val in range(len(rankinglst)):
-            score += (6 - val) * ranking_data[row][rankingsindex[rankinglst[val]]]
-
+            score += (6 - val) * ranking_data[row][2 + rankingsindex[rankinglst[val]]]
         score /= 105
         key = (ranking_data[row][0], ranking_data[row][1])
+        # print(key)
         rankingtracker[key] = score
-
+    # print(rankingtracker)
     # for each item in data, calculate the review cosine similarity and add the rankings score; store it in dictionary
     for row in range(len(review_data)):
         # calculating review cosine similarity
-        review_dict = process_review(review_data[row][1])
+        review_dict = process_review(review_data[row][1], list(written_dict.keys()))
         review_vec = [review_dict[val] for val in written_dict]
-        cos = dot(written_vec, review_vec)/(norm(written_vec)*norm(review_vec))
-        key = (review_data[row][5], review_data[row][6])
+        denom = (norm(written_vec)*norm(review_vec))
+        if denom == 0:
+            cos = 0
+        else:
+            cos = dot(written_vec, review_vec)/denom
+        key = (review_data[row][1], review_data[row][2])
         if cos + rankingtracker[key] > scoretracker[key]:
-            scoretracker[key] = scoretracker[key], cos + rankingtracker[key]
+            scoretracker[key] = cos + rankingtracker[key]
             indextracker[key] = row
 
+    # print(indextracker.keys())
     target = []
     # extract the top 3 (can change) and return
     top_n = 3
     for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)
-
+    # print(target)
     # this isn't right, only returns the columns in the review data (not sure if that's what we want)
+    
     outputdata = [review_data[indextracker[key]] for key in target]
 
 
@@ -129,6 +142,7 @@ def poss_cities():
     res = [tup[0] for tup in res]
     cities_data = res
 poss_cities()
+
 @app.route("/cities")
 def cities_search():
     global cities_data
@@ -136,11 +150,16 @@ def cities_search():
     matched_cities = [city for city in cities_data if query.lower() in city.lower()]
     print(jsonify(matched_cities))
     return jsonify(matched_cities)
+
 @app.route("/find_hotels")
 def find_hotels():
     city = request.args.get('city','')
-    rankings = request.args.get('rankings','')
+    rankings = request.args.getlist('rankings')
+
     prompt = request.args.get('promptDescription','')
+    if not city or not rankings or not prompt:
+        return jsonify({"error": "Missing required parameters"}), 400
+    
     hotel_search(city, rankings, None, prompt)
     return "pupu"
 
