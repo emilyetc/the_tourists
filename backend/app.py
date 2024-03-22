@@ -88,6 +88,8 @@ def hotel_search(city, rankinglst, amenities, written_text):
         score = 0
         for val in range(len(rankinglst)):
             score += (6 - val) * ranking_data[row][rankingsindex[rankinglst[val]]]
+
+        score /= 5
         key = (ranking_data[row][0], ranking_data[row][1])
         rankingtracker[key] = score
 
