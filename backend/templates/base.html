@@ -15,7 +15,7 @@
                 style="margin-bottom:  0px;">
         </div>
         <div class="top-text">
-            <div class="input-box" onclick="sendFocus()">
+            <div class="input-box">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
                 <input type="text" placeholder="Search for a city" id="cityInput">
             </div>
@@ -80,7 +80,7 @@
             </div>
         </div>
         <div class="submit_form">
-            <button id="submitBtn">Submit</button>
+            <button id="submitBtn" onclick="submit_form()">Submit</button>
         </div>
     </div>
 
