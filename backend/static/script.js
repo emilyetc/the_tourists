@@ -60,3 +60,18 @@ amenitiesList.addEventListener('click', (event) => {
     }
   }
 });
+//logic for submitting form information below
+function submit_form() {
+  var city = document.getElementById("cityInput").value;
+  var promptDescription = document.getElementById("text_input").value;
+  var rankings = [];
+  var items = document.querySelectorAll(".amenity-item .amenity-name");
+  items.forEach(function (item) {
+    rankings.push(item.textContent);
+  });
+  var formData = new URLSearchParams();
+  formData.append('city', city);
+  formData.append('rankings', JSON.stringify(rankings));
+  formData.append('promptDescription', promptDescription);
+  const response = fetch("/find_hotels?" + formData.toString())
+}
