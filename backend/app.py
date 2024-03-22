@@ -160,8 +160,8 @@ def find_hotels():
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
     
-    hotel_search(city, rankings, None, prompt)
-    return "pupu"
+    resp = hotel_search(city, rankings, None, prompt)
+    return resp
 
 if "DB_NAME" not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)

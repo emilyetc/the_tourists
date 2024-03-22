@@ -72,7 +72,31 @@ function submit_form() {
   var formData = new URLSearchParams();
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
-  console.log(rankings);
   formData.append('promptDescription', promptDescription);
-  const response = fetch("/find_hotels?" + formData.toString())
+  fetch("/find_hotels?" + formData.toString())
+    .then(response => response.json())
+    .then(data => {
+      displayResults(data);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
+function displayResults(data) {
+  const resultsContainer = document.getElementById('results');
+  resultsContainer.innerHTML = ''; // Clear previous results
+
+  data.forEach(hotel => {
+    const hotelDiv = document.createElement('div');
+    hotelDiv.classList.add('hotel');
+
+    const nameElement = document.createElement('h3');
+    nameElement.textContent = hotel.title;
+    hotelDiv.appendChild(nameElement);
+
+    const reviewElement = document.createElement('p');
+    reviewElement.textContent = hotel.ratings;
+    hotelDiv.appendChild(reviewElement);
+    resultsContainer.appendChild(hotelDiv);
+  });
 }
