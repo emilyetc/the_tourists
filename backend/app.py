@@ -5,7 +5,7 @@ from nltk.tokenize import word_tokenize
 from collections import defaultdict
 from numpy import dot
 from numpy.linalg import norm
-
+import nltk
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
@@ -60,17 +60,18 @@ def hotel_search(city, rankinglst, amenities, written_text):
     being the most important, amenities = target amenities, written_text =
     user's written input
     """
-
+    nltk.download('stopwords')
+    nltk.download('punkt')
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
 
     # selecting hotels within a city (will add amenities later)
-    query_sql = f"""SELECT * FROM reviews WHERE locality = {city}"""
+    query_sql = f"""SELECT * FROM reviews WHERE locality = '{city}'"""
     review_data = mysql_engine.query_selector(query_sql)
 
     # selecting rankings wtihin a city
-    query_sql = f"""SELECT * FROM rankings WHERE locality = {city}"""
+    query_sql = f"""SELECT * FROM rankings WHERE locality = '{city}'"""
     ranking_data = mysql_engine.query_selector(query_sql)
 
     # tracks the highest score so far
@@ -133,6 +134,13 @@ def cities_search():
     matched_cities = [city for city in cities_data if query.lower() in city.lower()]
     print(jsonify(matched_cities))
     return jsonify(matched_cities)
+@app.route("/find_hotels")
+def find_hotels():
+    city = request.args.get('city','')
+    rankings = request.args.get('rankings','')
+    prompt = request.args.get('promptDescription','')
+    hotel_search(city, rankings, None, prompt)
+    return "pupu"
 
 if "DB_NAME" not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)
