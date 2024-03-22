@@ -83,7 +83,81 @@
 }
 
 #banner {
-    padding-bottom: 5px;
+    padding-bottom: 0;
+    margin: 0;
+}
+
+
+#prompt {
+    width: 600px;
+    height: 100%;
+    margin-top: 50px;
+    padding-bottom: 50px;
+}
+
+#right h3 {
+    font-family: 'Kanit', sans-serif;
+    text-align: center;
+
+}
+
+.submit_form button {
+    margin-left: 10px;
+    border-radius: 10px;
+    background: rgb(162, 203, 162);
+
+}
+
+#text_input {
+    text-align: left;
+    vertical-align: top;
+    padding-top: 10px;
+    padding-left: 10px;
+    box-sizing: border-box;
+}
+
+#amenities-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.amenity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: #f2f2f2;
+    border: 1px solid #ddd;
+    margin-bottom: 4px;
+}
+
+.arrow-buttons {
+    display: flex;
+}
+
+#left {
+    width: 50%;
+    float: left;
+}
+
+#right {
+    width: 50%;
+    float: right;
+}
+
+.move-up,
+.move-down {
+    background-color: #ddd;
+    border: none;
+    color: #333;
+    padding: 4px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 2px;
+    cursor: pointer;
 }
 
 #banner img {
