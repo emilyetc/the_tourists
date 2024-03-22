@@ -11,22 +11,80 @@
     <div class="full-body-container">
         <div id="banner">
             <img src="{{ url_for('static', filename='images/banner.png') }}"
-                alt="text bubble with blue background and green text that says Globe Trotter with airplane flying out">
+                alt="text bubble with blue background and green text that says Globe Trotter with airplane flying out"
+                style="margin-bottom:  0px;">
         </div>
         <div class="top-text">
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
                 <input type="text" placeholder="Search for a city" id="cityInput">
-
             </div>
             <div id="suggestions">
 
             </div>
         </div>
+        <div id="amenity_rankings">
 
+        </div>
+        <div id="prompt">
+            <div id="left">
+                <textarea placeholder="Write a review for your ideal hotel experience." id="text_input"
+                    rows="4"></textarea>
+            </div>
+            <div id="right">
+                <h3>Order these hotel attributes from most to least important:</h3>
+                <ul id="amenities-list">
+                    <li class="amenity-item">
+                        <span class="amenity-name">Service</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                    <li class="amenity-item">
+                        <span class="amenity-name">Cleanliness</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                    <li class="amenity-item">
+                        <span class="amenity-name">Value</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                    <li class="amenity-item">
+                        <span class="amenity-name">Location</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                    <li class="amenity-item">
+                        <span class="amenity-name">Sleep Quality</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                    <li class="amenity-item">
+                        <span class="amenity-name">Rooms</span>
+                        <span class="arrow-buttons">
+                            <button class="move-up" aria-label="Move up">&#9650;</button>
+                            <button class="move-down" aria-label="Move down">&#9660;</button>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="submit_form">
+            <button id="submitBtn">Submit</button>
+        </div>
     </div>
 
-    <script src="{{ url_for('static', filename='searchbar.js') }}">
+    <script src="{{ url_for('static', filename='script.js') }}">
 
         // function answerBoxTemplate(title, titleDesc) {
         //     return `<div class=''>
