@@ -99,4 +99,5 @@ function displayResults(data) {
     hotelDiv.appendChild(reviewElement);
     resultsContainer.appendChild(hotelDiv);
   });
+  document.getElementById("results").scrollIntoView();
 }
