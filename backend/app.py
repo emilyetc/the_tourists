@@ -18,10 +18,9 @@ os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
 # Don't worry about the deployment credentials, those are fixed
 # You can use a different DB name if you want to
 LOCAL_MYSQL_USER = "root"
-LOCAL_MYSQL_USER_PASSWORD = "info4300"
+LOCAL_MYSQL_USER_PASSWORD = "SqlGoat234$"
 LOCAL_MYSQL_PORT = 3306
-LOCAL_MYSQL_DATABASE = "info4300"
-
+LOCAL_MYSQL_DATABASE = "globe_trotter"
 mysql_engine = MySQLDatabaseHandler(
     LOCAL_MYSQL_USER, LOCAL_MYSQL_USER_PASSWORD, LOCAL_MYSQL_PORT, LOCAL_MYSQL_DATABASE
 )
@@ -35,23 +34,46 @@ CORS(app)
 def process_text(written_text):
     """remove stop words from the written text, transforms relevant words into a dictionary"""
     filter_out = set(stopwords.words("english"))
+    # negative stop words needed for sentiment analysis
+    negative_terms = set(["no", "not", "none", "nor", "never", "shouldn't", "won't", "doesn't", "isn't", "wouldn't", "without"])
+    filter_out = filter_out.difference(negative_terms)
     tokenized = word_tokenize(written_text)
     filtered = [w for w in tokenized if not w.lower() in filter_out]
     output = defaultdict(int)
-    for val in filtered:
-        output[val] += 1
+    #If a term is preceded by a negative term, reduce term frequency by one
+    #Note: negative terms are not included as keys in the output dictionary
+    for i in range(len(filtered)):
+        term = filtered[i].lower()
+        prev_term = None if i==0 else filtered[i-1].lower()
+        if (i==0 and term not in negative_terms):
+            output[term] += 1
+        elif (term not in negative_terms):
+            if (prev_term in negative_terms):
+                output[term] -= 1
+            else:
+                output[term] += 1
+    for term, freq in output.items():
+        output[term] = freq if freq >= 0 else 0
     return output
-
 
 def process_review(review, target):
     """given a review, returns a dictionary where the keys are the strings in set target
     and the values count the number of target strings in the review"""
+    negative_terms = set(["no", "not", "none", "nor", "never", "shouldn't", "won't", "doesn't", "isn't", "wouldn't", "without"])
     output = defaultdict(int)
     review = word_tokenize(review)
-    for val in review:
-        val = val.lower()
-        if val in target:
-            output[val] += 1
+    for i in range(len(review)):
+        term = review[i].lower()
+        prev_term = None if i==0 else review[i-1].lower()
+        if(term in target):
+            if(i==0 and term not in negative_terms):
+                output[term] += 1
+            elif(prev_term not in negative_terms):
+                output[term] += 1
+            elif(prev_term in negative_terms):
+                output[term] -= 1
+    for term, freq in output.items():
+        output[term] = freq if freq >= 0 else 0
     return output
 
 def lstparser(rankinglst):
@@ -103,7 +125,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     # for each item in data, calculate the review cosine similarity and add the rankings score; store it in dictionary
     for row in range(len(review_data)):
         # calculating review cosine similarity
-        review_dict = process_review(review_data[row][1], list(written_dict.keys()))
+        review_dict = process_review(review_data[row][0], list(written_dict.keys()))
         review_vec = [review_dict[val] for val in written_dict]
         denom = (norm(written_vec)*norm(review_vec))
         if denom == 0:
