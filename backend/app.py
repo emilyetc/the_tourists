@@ -30,7 +30,8 @@ mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
-
+nltk.download('stopwords')
+nltk.download('punkt')
 def process_text(written_text):
     """remove stop words from the written text, transforms relevant words into a dictionary"""
     filter_out = set(stopwords.words("english"))
@@ -88,8 +89,6 @@ def hotel_search(city, rankinglst, amenities, written_text):
     user's written input
     """
     rankinglst = lstparser(rankinglst)
-    nltk.download('stopwords')
-    nltk.download('punkt')
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
@@ -154,8 +153,6 @@ def hotel_search(city, rankinglst, amenities, written_text):
 
 def attraction_search(city, written_text):
     '''potentially not functional, not tested'''
-    nltk.download('stopwords')
-    nltk.download('punkt')
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
@@ -187,7 +184,7 @@ def attraction_search(city, written_text):
     # extract the top 3 (can change) and return
     top_n = 3
     
-    for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
+    for key, val in sorted(scoretracker.items(), key=lambda x: x[1], reverse=True)[:top_n]:
         target.append(key)
 
     outputdata = [attraction_data[indextracker[key]] for key in target]
