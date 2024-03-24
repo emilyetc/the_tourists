@@ -79,10 +79,10 @@ function submit_form() {
       displayResults(hotelData, 'hotel');
       return fetch("/find_attractions?" + formData.toString()); // Fetch attractions after hotels
     })
-    .then(response => response.json())
-    .then(attractionData => {
-      displayResults(attractionData, 'attraction');
-    })
+    // .then(response => response.json())
+    // .then(attractionData => {
+    //   displayResults(attractionData, 'attraction');
+    // })
     .catch(error => {
       console.error('Error:', error);
     });
@@ -108,7 +108,7 @@ function submit_form() {
 } */
 function displayResults(data, type) {
   const resultsContainer = document.getElementById('results');
-
+  resultsContainer.innerHTML = ''; // Clear previous results
   data.forEach(item => {
     const itemDiv = document.createElement('div');
     itemDiv.classList.add(type === 'hotel' ? 'hotel' : 'attraction');

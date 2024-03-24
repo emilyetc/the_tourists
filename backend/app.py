@@ -179,7 +179,7 @@ def attraction_search(city, written_text):
             scoretracker[key] = cos
             indextracker[key] = row
 
-    print(indextracker.keys())
+    # print(indextracker.keys())
     target = []
     # extract the top 3 (can change) and return
     top_n = 3
