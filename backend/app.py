@@ -18,9 +18,9 @@ os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
 # Don't worry about the deployment credentials, those are fixed
 # You can use a different DB name if you want to
 LOCAL_MYSQL_USER = "root"
-LOCAL_MYSQL_USER_PASSWORD = "SqlGoat234$"
+LOCAL_MYSQL_USER_PASSWORD = "info4300"
 LOCAL_MYSQL_PORT = 3306
-LOCAL_MYSQL_DATABASE = "globe_trotter"
+LOCAL_MYSQL_DATABASE = "info4300"
 mysql_engine = MySQLDatabaseHandler(
     LOCAL_MYSQL_USER, LOCAL_MYSQL_USER_PASSWORD, LOCAL_MYSQL_PORT, LOCAL_MYSQL_DATABASE
 )
@@ -133,7 +133,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
         else:
             cos = dot(written_vec, review_vec)/denom
         key = (review_data[row][1], review_data[row][2])
-        if cos + rankingtracker[key] > scoretracker[key]:
+        if cos + rankingtracker[key] > scoretracker[key]: #cosine sim seems irrelevant, so adding a multiplier
             scoretracker[key] = cos + rankingtracker[key]
             indextracker[key] = row
 
@@ -141,15 +141,57 @@ def hotel_search(city, rankinglst, amenities, written_text):
     target = []
     # extract the top 3 (can change) and return
     top_n = 3
-    for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
-        target.append(key)
+    '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
+        target.append(key)'''
     # print(target)
     # this isn't right, only returns the columns in the review data (not sure if that's what we want)
-    
+    target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
     outputdata = [review_data[indextracker[key]] for key in target]
 
 
     keys = ["ratings", "title", "text", "author", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
+    return json.dumps([dict(zip(keys, i)) for i in outputdata])
+
+def attraction_search(city, written_text):
+    '''potentially not functional, not tested'''
+    nltk.download('stopwords')
+    nltk.download('punkt')
+    # formatting user input
+    written_dict = process_text(written_text)
+    written_vec = [written_dict[val] for val in written_dict]
+
+    # selecting amenities within a city
+    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
+    attraction_data = mysql_engine.query_selector(query_sql)
+    attraction_data = attraction_data.all()
+
+    # tracks the highest score so far
+    scoretracker = defaultdict(int)
+    # tracks the index of the highest score so far
+    indextracker = dict()
+    for row in range(len(attraction_data)):
+        attraction_dict = process_review(attraction_data[row][0], list(written_dict.keys()))
+        attraction_vec = [attraction_dict[val] for val in written_dict]
+        denom = (norm(written_vec)*norm(attraction_vec))
+        if denom == 0:
+            cos = 0
+        else:
+            cos = dot(written_vec, attraction_vec)/denom
+        key = (attraction_data[row][1], attraction_data[row][2])
+        if cos > scoretracker[key]:
+            scoretracker[key] = cos
+            indextracker[key] = row
+
+    print(indextracker.keys())
+    target = []
+    # extract the top 3 (can change) and return
+    top_n = 3
+    
+    for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
+        target.append(key)
+
+    outputdata = [attraction_data[indextracker[key]] for key in target]
+    keys = ["title", "text"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 
@@ -181,7 +223,16 @@ def find_hotels():
     prompt = request.args.get('promptDescription','')
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
-    resp = hotel_search(city, rankings, None, prompt)
+    resp = hotel_search(city, rankings, None, prompt) 
+    return resp
+
+@app.route("/find_attractions")
+def find_attractions():
+    city = request.args.get('city','')
+    prompt = request.args.get('promptDescription','')
+    if not city or not prompt:
+        return jsonify({"error": "Missing required parameters"}), 400
+    resp = attraction_search(city, prompt) 
     return resp
 
 if "DB_NAME" not in os.environ:

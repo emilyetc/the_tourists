@@ -75,14 +75,19 @@ function submit_form() {
   formData.append('promptDescription', promptDescription);
   fetch("/find_hotels?" + formData.toString())
     .then(response => response.json())
-    .then(data => {
-      displayResults(data);
+    .then(hotelData => {
+      displayResults(hotelData, 'hotel');
+      return fetch("/find_attractions?" + formData.toString()); // Fetch attractions after hotels
+    })
+    .then(response => response.json())
+    .then(attractionData => {
+      displayResults(attractionData, 'attraction');
     })
     .catch(error => {
       console.error('Error:', error);
     });
 }
-function displayResults(data) {
+/* function displayResults(data) {
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = ''; // Clear previous results
 
@@ -99,5 +104,25 @@ function displayResults(data) {
     hotelDiv.appendChild(reviewElement);
     resultsContainer.appendChild(hotelDiv);
   });
+  document.getElementById("results").scrollIntoView();
+} */
+function displayResults(data, type) {
+  const resultsContainer = document.getElementById('results');
+
+  data.forEach(item => {
+    const itemDiv = document.createElement('div');
+    itemDiv.classList.add(type === 'hotel' ? 'hotel' : 'attraction');
+
+    const nameElement = document.createElement('h3');
+    nameElement.textContent = type === 'hotel' ? item.title : item.name;
+    itemDiv.appendChild(nameElement);
+
+    const descriptionElement = document.createElement('p');
+    descriptionElement.textContent = type === 'hotel' ? item.ratings : item.description;
+    itemDiv.appendChild(descriptionElement);
+
+    resultsContainer.appendChild(itemDiv);
+  });
+
   document.getElementById("results").scrollIntoView();
 }
