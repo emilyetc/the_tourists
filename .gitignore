@@ -19,5 +19,4 @@ build/
 helpers/*
 
 touristsenv/*
-*.csv
 *.ipynb
