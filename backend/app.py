@@ -223,14 +223,22 @@ def find_hotels():
     resp = hotel_search(city, rankings, None, prompt) 
     return resp
 
-@app.route("/find_attractions")
-def find_attractions():
+@app.route("/find_places")
+def find_places():
     city = request.args.get('city','')
+    rankings = request.args.getlist('rankings')
     prompt = request.args.get('promptDescription','')
-    if not city or not prompt:
+    if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
-    resp = attraction_search(city, prompt) 
-    return resp
+    hotels = hotel_search(city, rankings, None, prompt)
+    attractions = attraction_search(city, prompt) 
+    hotels_dict = json.loads(hotels)
+    attractions_dict = json.loads(attractions)
+    combined_results = {
+        "Recommended Hotels": hotels_dict,
+        "Recommended Attractions": attractions_dict
+    }
+    return jsonify(combined_results)
 
 if "DB_NAME" not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)
