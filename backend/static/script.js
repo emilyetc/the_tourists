@@ -118,7 +118,7 @@ function displayResults(data, type) {
     itemDiv.appendChild(nameElement);
 
     const descriptionElement = document.createElement('p');
-    descriptionElement.textContent = type === 'hotel' ? item.ratings : item.description;
+    descriptionElement.innerHTML = type === 'hotel' ? item.ratings : item.description;
     itemDiv.appendChild(descriptionElement);
 
     resultsContainer.appendChild(itemDiv);

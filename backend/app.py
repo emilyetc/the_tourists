@@ -26,7 +26,7 @@ mysql_engine = MySQLDatabaseHandler(
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-mysql_engine.load_file_into_db()
+# mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
@@ -59,23 +59,31 @@ def process_text(written_text):
 
 def process_review(review, target):
     """given a review, returns a dictionary where the keys are the strings in set target
-    and the values count the number of target strings in the review"""
+    and the values count the number of target strings in the review, and a modified review
+    text with the matching words bolded"""
     negative_terms = set(["no", "not", "none", "nor", "never", "shouldn't", "won't", "doesn't", "isn't", "wouldn't", "without"])
     output = defaultdict(int)
-    review = word_tokenize(review)
-    for i in range(len(review)):
-        term = review[i].lower()
-        prev_term = None if i==0 else review[i-1].lower()
+    review_words = word_tokenize(review)
+    modified_review = []
+    for i in range(len(review_words)):
+        term = review_words[i].lower()
+        prev_term = None if i==0 else review_words[i-1].lower()
         if(term in target):
             if(i==0 and term not in negative_terms):
                 output[term] += 1
+                modified_review.append(f"<b>{term}</b>")
             elif(prev_term not in negative_terms):
                 output[term] += 1
+                modified_review.append(f"<b>{term}</b>")
             elif(prev_term in negative_terms):
                 output[term] -= 1
+                modified_review.append(f"<b>{term}</b>")
+        else:
+            modified_review.append(term)
     for term, freq in output.items():
         output[term] = freq if freq >= 0 else 0
-    return output
+    modified_review = " ".join(modified_review)
+    return output, modified_review
 
 def lstparser(rankinglst):
     temp = rankinglst[0][1:-1]
@@ -97,6 +105,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     query_sql = f"""SELECT * FROM reviews WHERE locality = '{city}'"""
     review_data = mysql_engine.query_selector(query_sql)
     review_data = review_data.all()
+    review_data = [[str(col) for col in row] for row in review_data]
     # selecting rankings wtihin a city
     query_sql = f"""SELECT * FROM rankings WHERE locality = '{city}'"""
     ranking_data = mysql_engine.query_selector(query_sql)
@@ -124,7 +133,8 @@ def hotel_search(city, rankinglst, amenities, written_text):
     # for each item in data, calculate the review cosine similarity and add the rankings score; store it in dictionary
     for row in range(len(review_data)):
         # calculating review cosine similarity
-        review_dict = process_review(review_data[row][0], list(written_dict.keys()))
+        review_dict, modified_review = process_review(review_data[row][0], list(written_dict.keys()))
+        review_data[row][0] = modified_review
         review_vec = [review_dict[val] for val in written_dict]
         denom = (norm(written_vec)*norm(review_vec))
         if denom == 0:

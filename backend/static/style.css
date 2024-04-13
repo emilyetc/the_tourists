@@ -191,3 +191,13 @@
 .episode-desc {
     font-family: 'Montserrat', sans-serif;
 }
+
+#results {
+    display: flex;
+    flex-direction: column;
+    width: 1000px;
+}
+
+.hotel {
+    border-bottom: 4mm ridge rgba(57, 154, 223, 0.6);
+}
