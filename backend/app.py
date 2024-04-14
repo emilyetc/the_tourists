@@ -160,9 +160,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)'''
     target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
-    print(target)
     outputdata = [review_data[indextracker[key]]+[str(scoretracker[key])[:3]] for key in target]
-    print(outputdata[0])
     keys = ["ratings", "title", "text", "score", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
