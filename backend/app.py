@@ -191,7 +191,6 @@ def attraction_2(city, written_text):
     outputdata = [attraction_data[indextracker[key]] for key in target]
     keys = ["City", "Location_Name", "Description"]
     return json.dumps([dict(zip(keys, data)) for data in outputdata])
-    pass
 def attraction_search(city, written_text):
     """city = target city, written_text = user's written input
     """
@@ -234,14 +233,16 @@ def attraction_search(city, written_text):
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 def attraction_svd(city, written_text):
-    print("attraction svd called")
+    # print("attraction svd called")
     # Fetch descriptions of attractions from the specified city
+    if city == 'New York City':
+        city = 'New York'
+    elif city =='Washington DC':
+        city ='Washington District of Columbia'
     query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
     attraction_data = mysql_engine.query_selector(query_sql)
     attraction_data = attraction_data.all()
-    query_sql = f"SELECT * FROM attractions WHERE City = '{city}'"
-    attraction_data = mysql_engine.query_selector(query_sql)
-    attraction_data = attraction_data.all()
+    print(len(attraction_data))
     # Check if data is empty
     if not attraction_data:
         return json.dumps([])

@@ -131,24 +131,42 @@ function displayResults2(data) {
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = ''; // Clear previous results
 
-  data.forEach(item => {
-    const itemDiv = document.createElement('div');
+  // Iterate over the "Recommended Hotels" array
+  if (data.hasOwnProperty('Recommended Hotels')) {
+    const hotelsArray = data['Recommended Hotels'];
+    hotelsArray.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('hotel');
 
-    // Determine if the item is a hotel or an attraction based on available properties
-    const isHotel = item.hasOwnProperty('title') && item.hasOwnProperty('ratings');
-    const itemType = isHotel ? 'hotel' : 'attraction';
-    itemDiv.classList.add(itemType);
+      const nameElement = document.createElement('h3');
+      nameElement.textContent = item.title;
+      itemDiv.appendChild(nameElement);
 
-    const nameElement = document.createElement('h3');
-    nameElement.textContent = isHotel ? item.title : item.name;
-    itemDiv.appendChild(nameElement);
+      const descriptionElement = document.createElement('p');
+      descriptionElement.innerHTML = item.ratings;
+      itemDiv.appendChild(descriptionElement);
 
-    const descriptionElement = document.createElement('p');
-    descriptionElement.innerHTML = isHotel ? item.ratings : item.description;
-    itemDiv.appendChild(descriptionElement);
+      resultsContainer.appendChild(itemDiv);
+    });
+  }
 
-    resultsContainer.appendChild(itemDiv);
-  });
+  // Iterate over the "Recommended Attractions" array
+  if (data.hasOwnProperty('Recommended Attractions')) {
+    const attractionsArray = data['Recommended Attractions'];
+    attractionsArray.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('attraction');
 
+      const nameElement = document.createElement('h3');
+      nameElement.textContent = item.Location_Name;
+      itemDiv.appendChild(nameElement);
+
+      const descriptionElement = document.createElement('p');
+      descriptionElement.innerHTML = item.Description;
+      itemDiv.appendChild(descriptionElement);
+
+      resultsContainer.appendChild(itemDiv);
+    });
+  }
   resultsContainer.scrollIntoView();
 }
