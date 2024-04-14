@@ -124,7 +124,7 @@ function displayResults(data) {
       itemDiv.classList.add('attraction');
 
       const nameElement = document.createElement('h3');
-      nameElement.textContent = item.Location_Name + " (Similarity score: " + item.Score + ")";
+      nameElement.textContent = item.Location_Name;
       itemDiv.appendChild(nameElement);
 
       const descriptionElement = document.createElement('p');

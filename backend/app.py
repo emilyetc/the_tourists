@@ -149,10 +149,10 @@ def hotel_search(city, rankinglst, amenities, written_text):
         else:
             cos = dot(written_vec, review_vec)/denom
         key = (review_data[row][1], review_data[row][2])
-        if cos + rankingtracker[key] > scoretracker[key]: #cosine sim seems irrelevant, so adding a multiplier
+        curr_score = (cos + rankingtracker[key])/(float(2))
+        if curr_score > scoretracker[key]: #cosine sim seems irrelevant, so adding a multiplier
             scoretracker[key] = cos + rankingtracker[key]
             indextracker[key] = row
-
     # print(indextracker.keys())
     target = []
     # extract the top 3 (can change) and return
@@ -197,8 +197,14 @@ def attraction_svd(city, written_text):
     written_vec = reduced_matrix[-1]
     attraction_vecs = reduced_matrix[:-1]
     # Compute cosine similarities
+    # denom = (norm(written_vec)*norm(attraction_vecs.T))
+    # print("denom", denom)
+    # if denom == 0:
+    #     similarities = 0
+    # else:
+    #     similarities = dot(written_vec, attraction_vecs.T)/denom    # Sort attractions based on similarity score
+    # print("similarities", similarities)
     similarities = cosine_similarity([written_vec], attraction_vecs)[0]
-    # Sort attractions based on similarity score
     sorted_indices = np.argsort(-similarities)
     written_dict = process_text(written_text)
     relevant_words = list(written_dict.keys())
@@ -209,10 +215,10 @@ def attraction_svd(city, written_text):
     for i in range(len(top_results)):
         city, location_name, description = top_results[i]
         highlighted_description = highlight_words(description, relevant_words)
-        highlighted_results.append((city, location_name, highlighted_description, str(sorted_indices[i])))
+        highlighted_results.append((city, location_name, highlighted_description))
 
     # Prepare the output
-    keys = ["City", "Location_Name", "Description", "Score"]
+    keys = ["City", "Location_Name", "Description"]
     return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
 
 @app.route("/")
