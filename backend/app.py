@@ -27,13 +27,13 @@ os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
 LOCAL_MYSQL_USER = "root"
 LOCAL_MYSQL_USER_PASSWORD = "info4300"
 LOCAL_MYSQL_PORT = 3306
-LOCAL_MYSQL_DATABASE = "info4300"
+LOCAL_MYSQL_DATABASE = "globe_trotter"
 mysql_engine = MySQLDatabaseHandler(
     LOCAL_MYSQL_USER, LOCAL_MYSQL_USER_PASSWORD, LOCAL_MYSQL_PORT, LOCAL_MYSQL_DATABASE
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-# mysql_engine.load_file_into_db()
+mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
@@ -159,79 +159,13 @@ def hotel_search(city, rankinglst, amenities, written_text):
     top_n = 3
     '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)'''
-    # print(target)
-    # this isn't right, only returns the columns in the review data (not sure if that's what we want)
     target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
-    outputdata = [review_data[indextracker[key]] for key in target]
+    outputdata = [review_data[indextracker[key]] + [key] for key in target]
 
 
     keys = ["ratings", "title", "text", "author", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
-def attraction_2(city, written_text):
-    written_dict = process_text(written_text)
-    written_vec = [written_dict[val] for val in written_dict]
-
-    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
-    attraction_data = mysql_engine.query_selector(query_sql)
-    attraction_data = attraction_data.all()
-    scoretracker = defaultdict(int)
-    indextracker = dict()
-
-    for index, (city, location_name, description) in enumerate(attraction_data):
-        attraction_dict = process_review(description, list(written_dict.keys()))
-        attraction_vec = [attraction_dict[val] for val in written_dict]
-        denom = (norm(written_vec) * norm(attraction_vec))
-        cos = 0 if denom == 0 else dot(written_vec, attraction_vec) / denom
-        key = (location_name, description)
-        if cos > scoretracker[key]:
-            scoretracker[key] = cos
-            indextracker[key] = index
-
-    target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:3]
-    outputdata = [attraction_data[indextracker[key]] for key in target]
-    keys = ["City", "Location_Name", "Description"]
-    return json.dumps([dict(zip(keys, data)) for data in outputdata])
-def attraction_search(city, written_text):
-    """city = target city, written_text = user's written input
-    """
-    # formatting user input
-    written_dict = process_text(written_text)
-    written_vec = [written_dict[val] for val in written_dict]
-
-    # selecting amenities within a city
-    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
-    attraction_data = mysql_engine.query_selector(query_sql)
-    attraction_data = attraction_data.all()
-
-    # tracks the highest score so far
-    scoretracker = defaultdict(int)
-    # tracks the index of the highest score so far
-    indextracker = dict()
-    for row in range(len(attraction_data)):
-        attraction_dict = process_review(attraction_data[row][0], list(written_dict.keys()))
-        attraction_vec = [attraction_dict[val] for val in written_dict]
-        denom = (norm(written_vec)*norm(attraction_vec))
-        if denom == 0:
-            cos = 0
-        else:
-            cos = dot(written_vec, attraction_vec)/denom
-        key = (attraction_data[row][1], attraction_data[row][2])
-        if cos > scoretracker[key]:
-            scoretracker[key] = cos
-            indextracker[key] = row
-
-    # print(indextracker.keys())
-    target = []
-    # extract the top 3 (can change) and return
-    top_n = 3
-    
-    for key, val in sorted(scoretracker.items(), key=lambda x: x[1], reverse=True)[:top_n]:
-        target.append(key)
-
-    outputdata = [attraction_data[indextracker[key]] for key in target]
-    keys = ["title", "text"]
-    return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 def highlight_words(text, words):
     pattern = r'\b(' + '|'.join(re.escape(word) for word in words) + r')\b'
@@ -272,12 +206,13 @@ def attraction_svd(city, written_text):
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
     # Prepare the output
     highlighted_results = []
-    for city, location_name, description in top_results:
+    for i in range(len(top_results)):
+        city, location_name, description = top_results[i]
         highlighted_description = highlight_words(description, relevant_words)
-        highlighted_results.append((city, location_name, highlighted_description))
+        highlighted_results.append((city, location_name, highlighted_description, sorted_indices[i]))
 
     # Prepare the output
-    keys = ["City", "Location_Name", "Description"]
+    keys = ["City", "Location_Name", "Description", "Score"]
     return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
 
 @app.route("/")
@@ -299,17 +234,6 @@ def cities_search():
     matched_cities = [city for city in cities_data if query.lower() in city.lower()]
     # print(jsonify(matched_cities))
     return jsonify(matched_cities)
-
-@app.route("/find_hotels")
-def find_hotels():
-    city = request.args.get('city','')
-    rankings = request.args.getlist('rankings')
-
-    prompt = request.args.get('promptDescription','')
-    if not city or not rankings or not prompt:
-        return jsonify({"error": "Missing required parameters"}), 400
-    resp = hotel_search(city, rankings, None, prompt) 
-    return resp
 
 @app.route("/find_places")
 def find_places():
