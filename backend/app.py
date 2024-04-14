@@ -151,7 +151,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
         key = (review_data[row][1], review_data[row][2])
         curr_score = (cos + rankingtracker[key])/(float(2))
         if curr_score > scoretracker[key]: #cosine sim seems irrelevant, so adding a multiplier
-            scoretracker[key] = cos + rankingtracker[key]
+            scoretracker[key] = curr_score
             indextracker[key] = row
     # print(indextracker.keys())
     target = []
@@ -160,10 +160,10 @@ def hotel_search(city, rankinglst, amenities, written_text):
     '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)'''
     target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
-    outputdata = [review_data[indextracker[key]] + [key] for key in target]
-
-
-    keys = ["ratings", "title", "text", "author", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
+    print(target)
+    outputdata = [review_data[indextracker[key]]+[str(scoretracker[key])[:3]] for key in target]
+    print(outputdata[0])
+    keys = ["ratings", "title", "text", "score", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 

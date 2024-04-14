@@ -103,7 +103,7 @@ function displayResults(data) {
       itemDiv.classList.add('hotel');
 
       const nameElement = document.createElement('h3');
-      nameElement.textContent = item.title;
+      nameElement.textContent = item.title + " (Similarity " + item.score + ")";
       itemDiv.appendChild(nameElement);
 
       const descriptionElement = document.createElement('p');
