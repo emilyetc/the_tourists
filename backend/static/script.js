@@ -76,62 +76,26 @@ function submit_form() {
   fetch("/find_places?" + formData.toString())
     .then(response => response.json())
     .then(hotelData => {
-      displayResults2(hotelData);
-      //displayResults(hotelData, 'hotel');
-      //return fetch("/find_attractions?" + formData.toString()); // Fetch attractions after hotels
+      displayResults(hotelData);
     })
-    // .then(response => response.json())
-    // .then(attractionData => {
-    //   displayResults(attractionData, 'attraction');
-    // })
     .catch(error => {
       console.error('Error:', error);
     });
 }
-/* function displayResults(data) {
+function displayResults(data) {
   const resultsContainer = document.getElementById('results');
-  resultsContainer.innerHTML = ''; // Clear previous results
-
-  data.forEach(hotel => {
-    const hotelDiv = document.createElement('div');
-    hotelDiv.classList.add('hotel');
-
-    const nameElement = document.createElement('h3');
-    nameElement.textContent = hotel.title;
-    hotelDiv.appendChild(nameElement);
-
-    const reviewElement = document.createElement('p');
-    reviewElement.textContent = hotel.ratings;
-    hotelDiv.appendChild(reviewElement);
-    resultsContainer.appendChild(hotelDiv);
-  });
-  document.getElementById("results").scrollIntoView();
-} */
-function displayResults(data, type) {
-  const resultsContainer = document.getElementById('results');
-  resultsContainer.innerHTML = ''; // Clear previous results
-  data.forEach(item => {
-    const itemDiv = document.createElement('div');
-    itemDiv.classList.add(type === 'hotel' ? 'hotel' : 'attraction');
-
-    const nameElement = document.createElement('h3');
-    nameElement.textContent = type === 'hotel' ? item.title : item.name;
-    itemDiv.appendChild(nameElement);
-
-    const descriptionElement = document.createElement('p');
-    descriptionElement.innerHTML = type === 'hotel' ? item.ratings : item.description;
-    itemDiv.appendChild(descriptionElement);
-
-    resultsContainer.appendChild(itemDiv);
-  });
-
-  document.getElementById("results").scrollIntoView();
-}
-function displayResults2(data) {
-  const resultsContainer = document.getElementById('results');
-  resultsContainer.innerHTML = ''; // Clear previous results
-
-  // Iterate over the "Recommended Hotels" array
+  resultsContainer.innerHTML = '';
+  const hotelsContainer = document.createElement('div');
+  hotelsContainer.classList.add('scrollable-container');
+  hotelsContainer.id = "hotels-container";
+  // const hotelsContainer = document.getElementById('hotels-container');
+  const attractionsContainer = document.createElement('div');
+  attractionsContainer.classList.add('scrollable-container');
+  attractionsContainer.id = "attractions-container";
+  // const attractionsContainer = document.getElementById('attractions-container');
+  const hotelResultTitle = document.createElement('h2');
+  hotelResultTitle.textContent = "You might like to stay at:";
+  hotelsContainer.appendChild(hotelResultTitle);
   if (data.hasOwnProperty('Recommended Hotels')) {
     const hotelsArray = data['Recommended Hotels'];
     hotelsArray.forEach(item => {
@@ -143,16 +107,18 @@ function displayResults2(data) {
       itemDiv.appendChild(nameElement);
 
       const descriptionElement = document.createElement('p');
-      descriptionElement.innerHTML = item.ratings;
+      descriptionElement.innerHTML = `A reviewer said: <br> <span>${item.ratings}</span>`;
       itemDiv.appendChild(descriptionElement);
 
-      resultsContainer.appendChild(itemDiv);
+      hotelsContainer.appendChild(itemDiv);
     });
+    resultsContainer.appendChild(hotelsContainer);
   }
-
-  // Iterate over the "Recommended Attractions" array
   if (data.hasOwnProperty('Recommended Attractions')) {
     const attractionsArray = data['Recommended Attractions'];
+    const attractionsResultTitle = document.createElement('h2');
+    attractionsResultTitle.textContent = "You might like to vist:";
+    attractionsContainer.appendChild(attractionsResultTitle);
     attractionsArray.forEach(item => {
       const itemDiv = document.createElement('div');
       itemDiv.classList.add('attraction');
@@ -162,11 +128,12 @@ function displayResults2(data) {
       itemDiv.appendChild(nameElement);
 
       const descriptionElement = document.createElement('p');
-      descriptionElement.innerHTML = item.Description;
+      descriptionElement.innerHTML = `A brief description: <br> <span>${item.Description}</span>`;
       itemDiv.appendChild(descriptionElement);
 
-      resultsContainer.appendChild(itemDiv);
+      attractionsContainer.appendChild(itemDiv);
     });
+    resultsContainer.appendChild(attractionsContainer);
   }
-  resultsContainer.scrollIntoView();
+  hotelsContainer.scrollIntoView({ block: 'start', behavior: 'smooth' });
 }

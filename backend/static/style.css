@@ -40,7 +40,7 @@
     display: flex;
     align-items: center;
     font-size: 48px;
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Merriweather', serif;
 }
 
 .google-colors h1 {
@@ -96,15 +96,22 @@
 }
 
 #right h3 {
-    font-family: 'Kanit', sans-serif;
+    font-family: 'Merriweather', serif;
     text-align: center;
+    margin-top: 0px;
 
 }
+
 
 .submit_form button {
     margin-left: 10px;
     border-radius: 10px;
-    background: rgb(162, 203, 162);
+    height: 50px;
+    width: 150px;
+    font-family: 'Merriweather', serif;
+    font-size: medium;
+    background: rgb(66, 208, 66);
+    margin-bottom: 50px;
 
 }
 
@@ -114,12 +121,15 @@
     padding-top: 10px;
     padding-left: 10px;
     box-sizing: border-box;
+    width: 260px;
+    height: 150px;
 }
 
 #amenities-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
+    border: 1px solid black;
 }
 
 .amenity-item {
@@ -129,7 +139,7 @@
     padding: 8px;
     background-color: #f2f2f2;
     border: 1px solid #ddd;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
 }
 
 .arrow-buttons {
@@ -162,13 +172,9 @@
 
 #banner img {
     width: 1000px;
-    /* Adjust the width of the image to fit the container */
     max-height: 100%;
-    /* Set a maximum height to maintain aspect ratio */
     display: block;
-    /* Ensure the image is displayed as a block element */
     margin-bottom: 20px;
-
 }
 
 .suggestions {
@@ -177,10 +183,25 @@
     width: 100%;
     cursor: default;
     border-radius: 3px;
+    z-index: 1;
+    position: absolute;
+    background-color: white;
+    width: 590px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+    border-left: 1px solid;
+}
+
+#suggestions {
+    margin-left: 10px;
+    margin-right: auto;
+
 }
 
 .search_result {
-    font-family: 'Kanit', sans-serif;
+    font-family: 'Merriweather', serif;
+    padding: 1px;
+    font-size: medium;
 
 }
 
@@ -188,16 +209,48 @@
     background: #efefef;
 }
 
-.episode-desc {
-    font-family: 'Montserrat', sans-serif;
-}
-
 #results {
     display: flex;
     flex-direction: column;
     width: 1000px;
+    /* margin-top: 50px; */
+}
+
+#results text {
+    font-family: 'Merriweather', serif;
+
 }
 
 .hotel {
+    border-bottom: 4mm ridge rgba(57, 154, 223, 0.6);
+
+}
+
+#hotels-container {
+    margin-bottom: 100px;
+}
+
+.scrollable-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow: overlay;
+    padding: 10px;
+    border: 3px solid #333;
+    display: flex;
+    flex-direction: column;
+
+}
+
+/* .scrollable-container h2 {
+    text-decoration: underline solid rgba(57, 154, 223, 0.6);
+    text-underline-offset: 0.3em
+} */
+
+.scrollable-container h3 {
+    text-decoration: underline solid rgb(66, 208, 66);
+    text-underline-offset: 0.3em
+}
+
+.attraction {
     border-bottom: 4mm ridge rgba(57, 154, 223, 0.6);
 }

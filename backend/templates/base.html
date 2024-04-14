@@ -1,5 +1,5 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - Flaskr</title>
+<title>GlobeTrotter</title>
 <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
 <link rel="stylesheet" href="../static/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,8 +28,9 @@
         </div>
         <div id="prompt">
             <div id="left">
-                <textarea placeholder="Write a review for your ideal hotel experience." id="text_input"
-                    rows="4"></textarea>
+                <textarea
+                    placeholder="Write a review for your ideal hotel experience or what you would want at an hotel and/or what kind of places you want to go to."
+                    id="text_input" rows="4"></textarea>
             </div>
             <div id="right">
                 <h3>Order these hotel attributes from most to least important:</h3>
@@ -82,35 +83,11 @@
         <div class="submit_form">
             <button id="submitBtn" onclick="submit_form()">Submit</button>
         </div>
-        <div id="results"></div>
+        <div id="results">
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}">
-
-        // function answerBoxTemplate(title, titleDesc) {
-        //     return `<div class=''>
-        //         <h3 class='episode-title'>${title}</h3>
-        //         <p class='episode-desc'>${titleDesc}</p>
-        //     </div>`
-        // }
-
-        // function sendFocus() {
-        //     document.getElementById('filter-text-val').focus()
-        // }
-
-        // function filterText() {
-        //     document.getElementById("answer-box").innerHTML = ""
-        //     console.log(document.getElementById("filter-text-val").value)
-        //     fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
-        //         .then((response) => response.json())
-        //         .then((data) => data.forEach(row => {
-
-        //             let tempDiv = document.createElement("div")
-        //             tempDiv.innerHTML = answerBoxTemplate(row.title, row.descr)
-        //             document.getElementById("answer-box").appendChild(tempDiv)
-        //         }));
-
-        // }
 
     </script>
 </body>
