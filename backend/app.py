@@ -8,6 +8,7 @@ from numpy.linalg import norm
 import nltk
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
+import re
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -232,6 +233,11 @@ def attraction_search(city, written_text):
     keys = ["title", "text"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
+def highlight_words(text, words):
+    pattern = r'\b(' + '|'.join(re.escape(word) for word in words) + r')\b'
+    highlighted = re.sub(pattern, r'<b>\1</b>', text, flags=re.IGNORECASE)
+    return highlighted
+
 def attraction_svd(city, written_text):
     # print("attraction svd called")
     # Fetch descriptions of attractions from the specified city
@@ -239,10 +245,9 @@ def attraction_svd(city, written_text):
         city = 'New York'
     elif city =='Washington DC':
         city ='Washington District of Columbia'
-    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
+    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}' AND Description NOT LIKE '%%hotel%%' AND Description NOT LIKE '%%INN%%'"""
     attraction_data = mysql_engine.query_selector(query_sql)
     attraction_data = attraction_data.all()
-    print(len(attraction_data))
     # Check if data is empty
     if not attraction_data:
         return json.dumps([])
@@ -261,11 +266,19 @@ def attraction_svd(city, written_text):
     similarities = cosine_similarity([written_vec], attraction_vecs)[0]
     # Sort attractions based on similarity score
     sorted_indices = np.argsort(-similarities)
+    written_dict = process_text(written_text)
+    relevant_words = list(written_dict.keys())
     top_n = 3
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
     # Prepare the output
+    highlighted_results = []
+    for city, location_name, description in top_results:
+        highlighted_description = highlight_words(description, relevant_words)
+        highlighted_results.append((city, location_name, highlighted_description))
+
+    # Prepare the output
     keys = ["City", "Location_Name", "Description"]
-    return json.dumps([dict(zip(keys, result)) for result in top_results])
+    return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
 
 @app.route("/")
 def home():
