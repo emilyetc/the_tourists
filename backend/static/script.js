@@ -73,11 +73,12 @@ function submit_form() {
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
   formData.append('promptDescription', promptDescription);
-  fetch("/find_hotels?" + formData.toString())
+  fetch("/find_places?" + formData.toString())
     .then(response => response.json())
     .then(hotelData => {
-      displayResults(hotelData, 'hotel');
-      return fetch("/find_attractions?" + formData.toString()); // Fetch attractions after hotels
+      displayResults2(hotelData);
+      //displayResults(hotelData, 'hotel');
+      //return fetch("/find_attractions?" + formData.toString()); // Fetch attractions after hotels
     })
     // .then(response => response.json())
     // .then(attractionData => {
@@ -125,4 +126,29 @@ function displayResults(data, type) {
   });
 
   document.getElementById("results").scrollIntoView();
+}
+function displayResults2(data) {
+  const resultsContainer = document.getElementById('results');
+  resultsContainer.innerHTML = ''; // Clear previous results
+
+  data.forEach(item => {
+    const itemDiv = document.createElement('div');
+
+    // Determine if the item is a hotel or an attraction based on available properties
+    const isHotel = item.hasOwnProperty('title') && item.hasOwnProperty('ratings');
+    const itemType = isHotel ? 'hotel' : 'attraction';
+    itemDiv.classList.add(itemType);
+
+    const nameElement = document.createElement('h3');
+    nameElement.textContent = isHotel ? item.title : item.name;
+    itemDiv.appendChild(nameElement);
+
+    const descriptionElement = document.createElement('p');
+    descriptionElement.innerHTML = isHotel ? item.ratings : item.description;
+    itemDiv.appendChild(descriptionElement);
+
+    resultsContainer.appendChild(itemDiv);
+  });
+
+  resultsContainer.scrollIntoView();
 }

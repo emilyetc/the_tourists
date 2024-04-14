@@ -10,6 +10,12 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.metrics.pairwise import cosine_similarity
+from sqlalchemy import create_engine
+import numpy as np
+
 # ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
 os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
@@ -161,8 +167,34 @@ def hotel_search(city, rankinglst, amenities, written_text):
     keys = ["ratings", "title", "text", "author", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
+def attraction_2(city, written_text):
+    written_dict = process_text(written_text)
+    written_vec = [written_dict[val] for val in written_dict]
+
+    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
+    attraction_data = mysql_engine.query_selector(query_sql)
+    attraction_data = attraction_data.all()
+    scoretracker = defaultdict(int)
+    indextracker = dict()
+
+    for index, (city, location_name, description) in enumerate(attraction_data):
+        attraction_dict = process_review(description, list(written_dict.keys()))
+        attraction_vec = [attraction_dict[val] for val in written_dict]
+        denom = (norm(written_vec) * norm(attraction_vec))
+        cos = 0 if denom == 0 else dot(written_vec, attraction_vec) / denom
+        key = (location_name, description)
+        if cos > scoretracker[key]:
+            scoretracker[key] = cos
+            indextracker[key] = index
+
+    target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:3]
+    outputdata = [attraction_data[indextracker[key]] for key in target]
+    keys = ["City", "Location_Name", "Description"]
+    return json.dumps([dict(zip(keys, data)) for data in outputdata])
+    pass
 def attraction_search(city, written_text):
-    '''potentially not functional, not tested'''
+    """city = target city, written_text = user's written input
+    """
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
@@ -201,6 +233,38 @@ def attraction_search(city, written_text):
     keys = ["title", "text"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
+def attraction_svd(city, written_text):
+    print("attraction svd called")
+    # Fetch descriptions of attractions from the specified city
+    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}'"""
+    attraction_data = mysql_engine.query_selector(query_sql)
+    attraction_data = attraction_data.all()
+    query_sql = f"SELECT * FROM attractions WHERE City = '{city}'"
+    attraction_data = mysql_engine.query_selector(query_sql)
+    attraction_data = attraction_data.all()
+    # Check if data is empty
+    if not attraction_data:
+        return json.dumps([])
+    # Extract descriptions and include the written_text as part of the corpus for vectorization
+    descriptions = [row[2] for row in attraction_data] + [written_text]
+    # Create TF-IDF vectorizer
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(descriptions)
+    # Perform SVD to reduce the dimensions
+    svd_model = TruncatedSVD(n_components=100, random_state=42)  # n_components can be tuned
+    reduced_matrix = svd_model.fit_transform(tfidf_matrix)
+    # The last row corresponds to the vector for written_text
+    written_vec = reduced_matrix[-1]
+    attraction_vecs = reduced_matrix[:-1]
+    # Compute cosine similarities
+    similarities = cosine_similarity([written_vec], attraction_vecs)[0]
+    # Sort attractions based on similarity score
+    sorted_indices = np.argsort(-similarities)
+    top_n = 3
+    top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
+    # Prepare the output
+    keys = ["City", "Location_Name", "Description"]
+    return json.dumps([dict(zip(keys, result)) for result in top_results])
 
 @app.route("/")
 def home():
@@ -241,7 +305,7 @@ def find_places():
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
     hotels = hotel_search(city, rankings, None, prompt)
-    attractions = attraction_search(city, prompt) 
+    attractions = attraction_svd(city, prompt) 
     hotels_dict = json.loads(hotels)
     attractions_dict = json.loads(attractions)
     combined_results = {
