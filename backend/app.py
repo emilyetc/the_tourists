@@ -257,7 +257,7 @@ def attraction_svd(city, written_text):
     vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = vectorizer.fit_transform(descriptions)
     # Perform SVD to reduce the dimensions
-    svd_model = TruncatedSVD(n_components=100, random_state=42)  # n_components can be tuned
+    svd_model = TruncatedSVD(n_components=100)
     reduced_matrix = svd_model.fit_transform(tfidf_matrix)
     # The last row corresponds to the vector for written_text
     written_vec = reduced_matrix[-1]
