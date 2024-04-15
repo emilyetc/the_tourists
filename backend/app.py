@@ -33,7 +33,7 @@ mysql_engine = MySQLDatabaseHandler(
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-mysql_engine.load_file_into_db()
+#mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
@@ -219,6 +219,57 @@ def attraction_svd(city, written_text):
     keys = ["City", "Location_Name", "Description"]
     return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
 
+def attraction_svd2(city, written_text):
+    # Modify city names if needed
+    if city == 'New York City':
+        city = 'New York'
+    elif city == 'Washington DC':
+        city = 'Washington District of Columbia'
+
+    # Fetch descriptions of attractions from the specified city
+    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}' AND Description NOT LIKE '%%hotel%%' AND Description NOT LIKE '%%INN%%'"""
+    attraction_data = mysql_engine.query_selector(query_sql)
+    attraction_data = attraction_data.all()
+    
+    # Check if data is empty
+    if not attraction_data:
+        return json.dumps([])
+
+    # Preprocess input text and attraction descriptions
+    written_dict = process_text(written_text)
+    processed_descriptions = []
+
+    # Process each attraction's description with process_review
+    for city, location_name, description in attraction_data:
+        _, modified_description = process_review(description, list(written_dict.keys()))
+        processed_descriptions.append(modified_description)
+    
+    # Include the written_text in the corpus for vectorization
+    descriptions = processed_descriptions + [written_text]
+
+    # Create TF-IDF vectorizer
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(descriptions)
+    
+    # Perform SVD to reduce the dimensions
+    svd_model = TruncatedSVD(n_components=100) 
+    reduced_matrix = svd_model.fit_transform(tfidf_matrix)
+    
+    # Separate the vector for written_text
+    written_vec = reduced_matrix[-1]
+    attraction_vecs = reduced_matrix[:-1]
+    
+    # Compute cosine similarities
+    similarities = cosine_similarity([written_vec], attraction_vecs)[0]
+    
+    # Sort attractions based on similarity score
+    sorted_indices = np.argsort(-similarities)
+    top_n = 3  # Adjust as needed
+    top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
+
+    keys = ["City", "Location_Name", "Description"]
+    return json.dumps([dict(zip(keys, result)) for result in top_results])
+
 @app.route("/")
 def home():
     return render_template("base.html", title="sample html")
@@ -247,7 +298,7 @@ def find_places():
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
     hotels = hotel_search(city, rankings, None, prompt)
-    attractions = attraction_svd(city, prompt) 
+    attractions = attraction_svd2(city, prompt) 
     hotels_dict = json.loads(hotels)
     attractions_dict = json.loads(attractions)
     combined_results = {
