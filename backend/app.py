@@ -266,9 +266,18 @@ def attraction_svd2(city, written_text):
     sorted_indices = np.argsort(-similarities)
     top_n = 3  # Adjust as needed
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
+    highlighted_results = []
+    relevant_words = list(written_dict.keys())
+    for i in range(len(top_results)):
+        city, location_name, description = top_results[i]
+        highlighted_description = highlight_words(description, relevant_words)
+        highlighted_results.append((city, location_name, highlighted_description))
 
+    # Prepare the output
     keys = ["City", "Location_Name", "Description"]
-    return json.dumps([dict(zip(keys, result)) for result in top_results])
+    return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
+    # keys = ["City", "Location_Name", "Description"]
+    # return json.dumps([dict(zip(keys, result)) for result in top_results])
 
 @app.route("/")
 def home():
