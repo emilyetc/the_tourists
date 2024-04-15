@@ -20,3 +20,4 @@ helpers/*
 
 touristsenv/*
 *.ipynb
+*.csv
