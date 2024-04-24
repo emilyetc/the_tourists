@@ -8,6 +8,7 @@
     rel="stylesheet">
 
 <body>
+    <script src="script.js"></script>
     <div class="full-body-container">
         <div id="banner">
             <img src="{{ url_for('static', filename='images/banner.png') }}"
@@ -82,6 +83,7 @@
         </div>
         <div class="submit_form">
             <button id="submitBtn" onclick="submit_form()">Submit</button>
+            <button id="refineBtn" onclick="refine_search()">Refine Search</button>
         </div>
         <div id="results">
         </div>

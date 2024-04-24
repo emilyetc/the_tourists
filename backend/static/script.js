@@ -82,6 +82,66 @@ function submit_form() {
       console.error('Error:', error);
     });
 }
+function refine_search() {
+  var city = document.getElementById("cityInput").value;
+  var promptDescription = document.getElementById("text_input").value;
+  var rankings = [];
+  var items = document.querySelectorAll(".amenity-item .amenity-name");
+  items.forEach(function (item) {
+    rankings.push(item.textContent);
+  });
+  var formData = new URLSearchParams();
+  formData.append('city', city);
+  formData.append('rankings', JSON.stringify(rankings));
+  formData.append('promptDescription', promptDescription);
+  fetch("/refine_search?" + formData.toString())
+    .then(response => response.json())
+    .then(hotelData => {
+      displayResults(hotelData);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
+function handleFeedback(hotel, buttonType) {
+  const feedbackData = {
+      hotelReview: hotel.ratings, 
+      buttonType: buttonType,
+  };
+  fetch('/feedback', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(feedbackData),
+  })
+  .then(response => {
+      if (!response.ok) {
+          throw new Error('No response');
+      }
+      return response.json();
+  })
+  .then(data => {
+      console.log('Feedback sent successfully:', data);
+      // const thumbsUp = document.getElementById('thumbsUpButton');
+      // const thumbsDown = document.getElementById('thumbsDownButton');
+      // const thumbsUpStyle = window.getComputedStyle(thumbsUp);
+      // const thumbsDownStyle = window.getComputedStyle(thumbsDown);
+      // const thumbsUpOpacity = thumbsUpStyle.opacity;
+      // const thumbsDownOpacity = thumbsDownStyle.opacity;
+      // if(buttonType == 'thumbsUp'){
+      //   thumbsUp.style.opacity = 0.9;
+      //   thumbsDown.style.opacity = 0.5;
+      // }
+      // else if(buttonType == 'thumbsDown'){
+      //   thumbsUp.style.opacity = 0.5;
+      //   thumbsDown.style.opacity = 0.9;
+      // }
+  })
+  .catch(error => {
+      console.error('Error:', error);
+  });
+}
 function displayResults(data) {
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = '';
@@ -109,6 +169,38 @@ function displayResults(data) {
       const descriptionElement = document.createElement('p');
       descriptionElement.innerHTML = `A reviewer said: <br> <span>${item.ratings}</span>`;
       itemDiv.appendChild(descriptionElement);
+
+      const thumbsUpButton = document.createElement('button');
+      thumbsUpButton.id = 'thumbsUpButton';
+      thumbsUpButton.classList.add('thumbs-up');
+      thumbsUpButton.textContent = '👍';
+      thumbsUpButton.addEventListener('click', function() {
+        handleFeedback(item, 'thumbsUp'); 
+        const thumbsUpStyle = window.getComputedStyle(thumbsUpButton);
+        if(thumbsUpStyle.opacity == 0.5){
+          thumbsUpButton.style.opacity = 0.9;
+        }
+        else{
+          thumbsUpButton.style.opacity = 0.5;
+        }
+      });
+      itemDiv.appendChild(thumbsUpButton);
+
+      const thumbsDownButton = document.createElement('button');
+      thumbsDownButton.id = 'thumbsDownButton';
+      thumbsDownButton.classList.add('thumbs-down');
+      thumbsDownButton.textContent = '👎';
+      thumbsDownButton.addEventListener('click', function() {
+        handleFeedback(item, 'thumbsDown');
+        const thumbsDownStyle = window.getComputedStyle(thumbsDownButton);
+        if(thumbsDownStyle.opacity == 0.5){
+          thumbsDownButton.style.opacity = 0.9;
+        }
+        else{
+          thumbsDownButton.style.opacity = 0.5;
+        }
+      });
+      itemDiv.appendChild(thumbsDownButton);
 
       hotelsContainer.appendChild(itemDiv);
     });

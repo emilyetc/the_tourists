@@ -107,6 +107,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
+    written_vec = rocchio(written_dict, good_hotel_reviews, bad_hotel_reviews)
 
     # selecting hotels within a city (will add amenities later)
     query_sql = f"""SELECT * FROM reviews WHERE locality = '{city}'"""
@@ -279,6 +280,49 @@ def attraction_svd2(city, written_text):
     # keys = ["City", "Location_Name", "Description"]
     # return json.dumps([dict(zip(keys, result)) for result in top_results])
 
+good_hotel_reviews = set()
+bad_hotel_reviews = set()
+
+def rocchio(query_dict, good_reviews, bad_reviews, a=0.4, b=0.3, c=0.3):
+    query_vector = np.array([query_dict[val] for val in query_dict])
+    sum_good_vector = np.zeros(len(query_dict))
+    sum_bad_vector = np.zeros(len(query_dict))
+
+    if len(good_reviews) == 0 and len(bad_reviews) == 0:
+        return query_vector
+
+    for rev in good_reviews:
+      review_dict, _ = process_review(rev, list(query_dict.keys()))
+      review_vec = [review_dict[val] for val in query_dict]
+      sum_good_vector = np.add(sum_good_vector, review_vec)
+
+    for rev in bad_reviews:
+      review_dict, _ = process_review(rev, list(query_dict.keys()))
+      review_vec = [review_dict[val] for val in query_dict]
+      sum_bad_vector = np.add(sum_bad_vector, review_vec)
+
+    if(len(good_reviews) == 0):
+      div2 = 0
+    else:
+      div2 = (1/len(good_reviews))
+    if(len(bad_reviews) == 0):
+      div3 = 0
+    else:
+      div3 = (1/len(bad_reviews))
+
+    q_1 = (a * query_vector) + (b * div2 * sum_good_vector) - (c * div3 * sum_bad_vector)
+    
+    for i in range(len(q_1)):
+      if(q_1[i] < 0):
+        q_1[i] = 0
+    return q_1
+
+def reset_feedback():
+    global good_hotel_reviews
+    global bad_hotel_reviews
+    good_hotel_reviews = set()
+    bad_hotel_reviews = set()
+
 @app.route("/")
 def home():
     return render_template("base.html", title="sample html")
@@ -301,6 +345,7 @@ def cities_search():
 
 @app.route("/find_places")
 def find_places():
+    reset_feedback()
     city = request.args.get('city','')
     rankings = request.args.getlist('rankings')
     prompt = request.args.get('promptDescription','')
@@ -315,6 +360,42 @@ def find_places():
         "Recommended Attractions": attractions_dict
     }
     return jsonify(combined_results)
+
+@app.route("/refine_search")
+def refine_search():
+    city = request.args.get('city','')
+    rankings = request.args.getlist('rankings')
+    prompt = request.args.get('promptDescription','')
+    if not city or not rankings or not prompt:
+        return jsonify({"error": "Missing required parameters"}), 400
+    hotels = hotel_search(city, rankings, None, prompt)
+    attractions = attraction_svd2(city, prompt) 
+    hotels_dict = json.loads(hotels)
+    attractions_dict = json.loads(attractions)
+    combined_results = {
+        "Recommended Hotels": hotels_dict,
+        "Recommended Attractions": attractions_dict
+    }
+    return jsonify(combined_results)
+
+@app.route('/feedback', methods=['POST'])
+def handle_feedback():
+    data = request.get_json()
+    hotel_review = data.get('hotelReview')
+    button_type = data.get('buttonType')
+
+    if button_type == 'thumbsUp':
+        if hotel_review in good_hotel_reviews:
+            good_hotel_reviews.remove(hotel_review)
+        else:
+            good_hotel_reviews.add(hotel_review)
+    elif button_type == 'thumbsDown':
+        if hotel_review in bad_hotel_reviews:
+            bad_hotel_reviews.remove(hotel_review)
+        else:
+            bad_hotel_reviews.add(hotel_review)
+
+    return jsonify({"message": "Feedback received successfully"})
 
 if "DB_NAME" not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)

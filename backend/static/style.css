@@ -248,9 +248,25 @@
 
 .scrollable-container h3 {
     text-decoration: underline solid rgb(66, 208, 66);
-    text-underline-offset: 0.3em
+    text-underline-offset: 0.3em;
 }
 
 .attraction {
     border-bottom: 4mm ridge rgba(57, 154, 223, 0.6);
+}
+
+.thumbs-up, .thumbs-down {
+    cursor: pointer;
+    font-size: 24px;
+    padding: 5px;
+}
+
+.thumbs-up {
+    background-color: #2ba827;
+    opacity: 0.5;
+}
+
+.thumbs-down {
+    background-color: #f32c2c;
+    opacity: 0.5;
 }
