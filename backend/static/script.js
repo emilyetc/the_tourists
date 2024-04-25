@@ -1,6 +1,6 @@
 const cityInput = document.getElementById('cityInput');
 const suggestions = document.getElementById('suggestions');
-
+const loadingIndicator = document.getElementById('loading-indicator');
 cityInput.addEventListener('input', async () => {
 
   const query = cityInput.value.trim();
@@ -73,16 +73,22 @@ function submit_form() {
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
   formData.append('promptDescription', promptDescription);
+  loadingIndicator.style.display = 'block';
+  loadingIndicator.scrollIntoView({ block: 'start', behavior: 'smooth' });
   fetch("/find_places?" + formData.toString())
     .then(response => response.json())
     .then(hotelData => {
+      loadingIndicator.style.display = 'none';
       displayResults(hotelData);
     })
     .catch(error => {
       console.error('Error:', error);
+      loadingIndicator.style.display = 'none';
     });
 }
 function refine_search() {
+  const resultsContainer = document.getElementById('results');
+  resultsContainer.innerHTML = '';
   var city = document.getElementById("cityInput").value;
   var promptDescription = document.getElementById("text_input").value;
   var rankings = [];
@@ -94,34 +100,38 @@ function refine_search() {
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
   formData.append('promptDescription', promptDescription);
+  loadingIndicator.style.display = 'block';
+  loadingIndicator.scrollIntoView({ block: 'start', behavior: 'smooth' });
   fetch("/refine_search?" + formData.toString())
     .then(response => response.json())
     .then(hotelData => {
+      loadingIndicator.style.display = 'none';
       displayResults(hotelData);
     })
     .catch(error => {
       console.error('Error:', error);
+      loadingIndicator.style.display = 'none';
     });
 }
 function handleFeedback(hotel, buttonType) {
   const feedbackData = {
-      hotelReview: hotel.ratings, 
-      buttonType: buttonType,
+    hotelReview: hotel.ratings,
+    buttonType: buttonType,
   };
   fetch('/feedback', {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(feedbackData),
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(feedbackData),
   })
-  .then(response => {
+    .then(response => {
       if (!response.ok) {
-          throw new Error('No response');
+        throw new Error('No response');
       }
       return response.json();
-  })
-  .then(data => {
+    })
+    .then(data => {
       console.log('Feedback sent successfully:', data);
       // const thumbsUp = document.getElementById('thumbsUpButton');
       // const thumbsDown = document.getElementById('thumbsDownButton');
@@ -137,10 +147,10 @@ function handleFeedback(hotel, buttonType) {
       //   thumbsUp.style.opacity = 0.5;
       //   thumbsDown.style.opacity = 0.9;
       // }
-  })
-  .catch(error => {
+    })
+    .catch(error => {
       console.error('Error:', error);
-  });
+    });
 }
 function displayResults(data) {
   const resultsContainer = document.getElementById('results');
@@ -154,33 +164,37 @@ function displayResults(data) {
   attractionsContainer.id = "attractions-container";
   // const attractionsContainer = document.getElementById('attractions-container');
   const hotelResultTitle = document.createElement('h2');
-  hotelResultTitle.textContent = "You might like to stay at:";
+  hotelResultTitle.textContent = "Popular hotels matching your query:";
   hotelsContainer.appendChild(hotelResultTitle);
   if (data.hasOwnProperty('Recommended Hotels')) {
     const hotelsArray = data['Recommended Hotels'];
     hotelsArray.forEach(item => {
       const itemDiv = document.createElement('div');
       itemDiv.classList.add('hotel');
-
       const nameElement = document.createElement('h3');
-      nameElement.textContent = item.title + " (Similarity " + item.score + ")";
+      nameElement.textContent = item.title + " (" + item.score + "% match)";
+      const descript = document.createElement('p');
+      descript.innerHTML = "<b> Average hotel attributes: </b>"
+      const attributes = document.createElement('p');
+      attributes.textContent = `Cleanliness: ${item.cleanliness.substring(0, 5)}, Location: ${item.location.substring(0, 5)}, Rooms: ${item.rooms.substring(0, 5)}, Service: ${item.service.substring(0, 5)}, Sleep quality: ${item["sleep quality"].substring(0, 5)}, Value: ${item.value.substring(0, 5)}`;
       itemDiv.appendChild(nameElement);
-
+      itemDiv.appendChild(descript);
+      itemDiv.appendChild(attributes);
       const descriptionElement = document.createElement('p');
-      descriptionElement.innerHTML = `A reviewer said: <br> <span>${item.ratings}</span>`;
+      descriptionElement.innerHTML = `<b>A reviewer said</b>: <br> <span>${item.ratings}</span>`;
       itemDiv.appendChild(descriptionElement);
 
       const thumbsUpButton = document.createElement('button');
       thumbsUpButton.id = 'thumbsUpButton';
       thumbsUpButton.classList.add('thumbs-up');
       thumbsUpButton.textContent = '👍';
-      thumbsUpButton.addEventListener('click', function() {
-        handleFeedback(item, 'thumbsUp'); 
+      thumbsUpButton.addEventListener('click', function () {
+        handleFeedback(item, 'thumbsUp');
         const thumbsUpStyle = window.getComputedStyle(thumbsUpButton);
-        if(thumbsUpStyle.opacity == 0.5){
+        if (thumbsUpStyle.opacity == 0.5) {
           thumbsUpButton.style.opacity = 0.9;
         }
-        else{
+        else {
           thumbsUpButton.style.opacity = 0.5;
         }
       });
@@ -190,13 +204,13 @@ function displayResults(data) {
       thumbsDownButton.id = 'thumbsDownButton';
       thumbsDownButton.classList.add('thumbs-down');
       thumbsDownButton.textContent = '👎';
-      thumbsDownButton.addEventListener('click', function() {
+      thumbsDownButton.addEventListener('click', function () {
         handleFeedback(item, 'thumbsDown');
         const thumbsDownStyle = window.getComputedStyle(thumbsDownButton);
-        if(thumbsDownStyle.opacity == 0.5){
+        if (thumbsDownStyle.opacity == 0.5) {
           thumbsDownButton.style.opacity = 0.9;
         }
-        else{
+        else {
           thumbsDownButton.style.opacity = 0.5;
         }
       });
@@ -209,7 +223,7 @@ function displayResults(data) {
   if (data.hasOwnProperty('Recommended Attractions')) {
     const attractionsArray = data['Recommended Attractions'];
     const attractionsResultTitle = document.createElement('h2');
-    attractionsResultTitle.textContent = "You might like to vist:";
+    attractionsResultTitle.textContent = "Popular attractions based on your interests:";
     attractionsContainer.appendChild(attractionsResultTitle);
     attractionsArray.forEach(item => {
       const itemDiv = document.createElement('div');

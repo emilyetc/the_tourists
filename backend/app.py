@@ -33,7 +33,7 @@ mysql_engine = MySQLDatabaseHandler(
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-mysql_engine.load_file_into_db()
+# mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
@@ -123,21 +123,22 @@ def hotel_search(city, rankinglst, amenities, written_text):
     scoretracker = defaultdict(int)
     # tracks the index of the highest score so far
     indextracker = dict()
-    # print(rankinglst)
     rankingtracker = dict()
     # creating dict to index into rankings column easily
     rankingsindex = {'service': 0, 'cleanliness': 1, 'value': 2, 'location': 3, 'sleep quality': 4, 'rooms': 5}
+    ranking_scores = defaultdict(dict)
+    starsIndex = {}
     # calculate rankings score
     for row in range(len(ranking_data)):
         # calculate score
         score = 0
+        key = (ranking_data[row][0], ranking_data[row][1])
         for val in range(len(rankinglst)):
             score += (6 - val) * ranking_data[row][2 + rankingsindex[rankinglst[val]]]
+            ranking_scores[key][list(rankingsindex.keys())[val]] = ranking_data[row][2 + rankingsindex[rankinglst[val]]]
         score /= 105
-        key = (ranking_data[row][0], ranking_data[row][1])
-        # print(key)
+        starsIndex[key] = ranking_data[row][8]
         rankingtracker[key] = score
-    # print(rankingtracker)
     # for each item in data, calculate the review cosine similarity and add the rankings score; store it in dictionary
     for row in range(len(review_data)):
         # calculating review cosine similarity
@@ -154,20 +155,25 @@ def hotel_search(city, rankinglst, amenities, written_text):
         if curr_score > scoretracker[key]: #cosine sim seems irrelevant, so adding a multiplier
             scoretracker[key] = curr_score
             indextracker[key] = row
-    # print(indextracker.keys())
     target = []
     # extract the top 3 (can change) and return
-    top_n = 3
+    top_n = 5
     '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)'''
     target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
-    outputdata = [review_data[indextracker[key]]+[str(scoretracker[key])[:3]] for key in target]
-    keys = ["ratings", "title", "text", "score", "num_helpful_votes", "hotel_class", "url", "name", "locality"]
+    outputdata = [
+    review_data[indextracker[key]] + 
+    [str(scoretracker[key]*100)[:5]] + 
+    [str(ranking_scores[key][ranking]) for ranking in rankinglst] + [str(starsIndex[key])]
+    for key in target
+]
+    keys = ["ratings", "title", "text", "score"] + rankinglst + ["stars"]
     return json.dumps([dict(zip(keys, i)) for i in outputdata])
 
 
 def highlight_words(text, words):
-    pattern = r'\b(' + '|'.join(re.escape(word) for word in words) + r')\b'
+    banned = ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms']
+    pattern = r'\b(' + '|'.join(re.escape(word) for word in words if word not in banned) + r')\b'
     highlighted = re.sub(pattern, r'<b>\1</b>', text, flags=re.IGNORECASE)
     return highlighted
 
@@ -253,7 +259,7 @@ def attraction_svd2(city, written_text):
     tfidf_matrix = vectorizer.fit_transform(descriptions)
     
     # Perform SVD to reduce the dimensions
-    svd_model = TruncatedSVD(n_components=100) 
+    svd_model = TruncatedSVD(n_components=7) 
     reduced_matrix = svd_model.fit_transform(tfidf_matrix)
     
     # Separate the vector for written_text
@@ -265,7 +271,7 @@ def attraction_svd2(city, written_text):
     
     # Sort attractions based on similarity score
     sorted_indices = np.argsort(-similarities)
-    top_n = 3  # Adjust as needed
+    top_n = 5  # Adjust as needed
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
     highlighted_results = []
     relevant_words = list(written_dict.keys())
