@@ -8,6 +8,7 @@ from numpy.linalg import norm
 import nltk
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
+from nltk.corpus import wordnet as wn
 import re
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 
@@ -39,6 +40,7 @@ app = Flask(__name__)
 CORS(app)
 nltk.download('stopwords')
 nltk.download('punkt')
+nltk.download('wordnet')
 def process_text(written_text):
     """remove stop words from the written text, transforms relevant words into a dictionary"""
     filter_out = set(stopwords.words("english"))
@@ -60,6 +62,13 @@ def process_text(written_text):
                 output[term] -= 1
             else:
                 output[term] += 1
+    for term in filtered:
+        synsets = wn.synsets(term)
+        for synset in synsets:
+            for lemma in synset.lemmas():
+                synonym = lemma.name()
+                if synonym != term:
+                    output[synonym.lower()] += output[term] / 2 
     for term, freq in output.items():
         output[term] = freq if freq >= 0 else 0
     return output
@@ -172,7 +181,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
 
 
 def highlight_words(text, words):
-    banned = ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms']
+    banned = ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not']
     pattern = r'\b(' + '|'.join(re.escape(word) for word in words if word not in banned) + r')\b'
     highlighted = re.sub(pattern, r'<b>\1</b>', text, flags=re.IGNORECASE)
     return highlighted
