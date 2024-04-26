@@ -34,7 +34,7 @@ mysql_engine = MySQLDatabaseHandler(
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-# mysql_engine.load_file_into_db()
+mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
@@ -72,7 +72,10 @@ def process_text(written_text):
     for term, freq in output.items():
         output[term] = freq if freq >= 0 else 0
     return output
-
+def remove_keys_values(dictionary, keys_to_remove):
+    for key in keys_to_remove:
+        dictionary.pop(key, None)
+    return dictionary
 def process_review(review, target):
     """given a review, returns a dictionary where the keys are the strings in set target
     and the values count the number of target strings in the review, and a modified review
@@ -116,6 +119,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     # formatting user input
     written_dict = process_text(written_text)
     written_vec = [written_dict[val] for val in written_dict]
+    written_dict = remove_keys_values(written_dict, ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not', 'places', 'stay','just', 'want'])
     written_vec = rocchio(written_dict, good_hotel_reviews, bad_hotel_reviews)
 
     # selecting hotels within a city (will add amenities later)
@@ -166,7 +170,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
             indextracker[key] = row
     target = []
     # extract the top 3 (can change) and return
-    top_n = 5
+    top_n = 10
     '''for key, val in sorted(scoretracker.items(), key=lambda x: x[0], reverse=True)[:top_n]:
         target.append(key)'''
     target = sorted(scoretracker, key=scoretracker.get, reverse=True)[:top_n]
@@ -181,8 +185,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
 
 
 def highlight_words(text, words):
-    banned = ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not']
-    pattern = r'\b(' + '|'.join(re.escape(word) for word in words if word not in banned) + r')\b'
+    pattern = r'\b(' + '|'.join(re.escape(word) for word in words) + r')\b'
     highlighted = re.sub(pattern, r'<b>\1</b>', text, flags=re.IGNORECASE)
     return highlighted
 
@@ -221,8 +224,9 @@ def attraction_svd(city, written_text):
     similarities = cosine_similarity([written_vec], attraction_vecs)[0]
     sorted_indices = np.argsort(-similarities)
     written_dict = process_text(written_text)
+    relevant_words = remove_keys_values(written_dict,['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not'])
     relevant_words = list(written_dict.keys())
-    top_n = 3
+    top_n = 10
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
     # Prepare the output
     highlighted_results = []
@@ -268,7 +272,7 @@ def attraction_svd2(city, written_text):
     tfidf_matrix = vectorizer.fit_transform(descriptions)
     
     # Perform SVD to reduce the dimensions
-    svd_model = TruncatedSVD(n_components=7) 
+    svd_model = TruncatedSVD(n_components=50) 
     reduced_matrix = svd_model.fit_transform(tfidf_matrix)
     
     # Separate the vector for written_text
@@ -283,6 +287,8 @@ def attraction_svd2(city, written_text):
     top_n = 5  # Adjust as needed
     top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
     highlighted_results = []
+    relevant_words = remove_keys_values(written_dict,['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not']
+)
     relevant_words = list(written_dict.keys())
     for i in range(len(top_results)):
         city, location_name, description = top_results[i]
