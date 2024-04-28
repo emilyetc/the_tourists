@@ -110,9 +110,9 @@ def lstparser(rankinglst):
     output = [word[1:-1].lower() for word in output]
     return output
 
-def hotel_search(city, rankinglst, amenities, written_text):
+def hotel_search(city, rankinglst, written_text):
     """city = target city, rankinglst = a string list of user's preferences with index = 0
-    being the most important, amenities = target amenities, written_text =
+    being the most important, written_text =
     user's written input
     """
     rankinglst = lstparser(rankinglst)
@@ -122,7 +122,7 @@ def hotel_search(city, rankinglst, amenities, written_text):
     written_dict = remove_keys_values(written_dict, ['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not', 'places', 'stay','just', 'want'])
     written_vec = rocchio(written_dict, good_hotel_reviews, bad_hotel_reviews)
 
-    # selecting hotels within a city (will add amenities later)
+    # selecting hotels within a city 
     query_sql = f"""SELECT * FROM reviews WHERE locality = '{city}'"""
     review_data = mysql_engine.query_selector(query_sql)
     review_data = review_data.all()
@@ -131,7 +131,6 @@ def hotel_search(city, rankinglst, amenities, written_text):
     query_sql = f"""SELECT * FROM rankings WHERE locality = '{city}'"""
     ranking_data = mysql_engine.query_selector(query_sql)
     ranking_data = ranking_data.all()
-    # print(ranking_data)
     # tracks the highest score so far
     scoretracker = defaultdict(int)
     # tracks the index of the highest score so far
@@ -188,56 +187,6 @@ def highlight_words(text, words):
     pattern = r'\b(' + '|'.join(re.escape(word) for word in words) + r')\b'
     highlighted = re.sub(pattern, r'<b>\1</b>', text, flags=re.IGNORECASE)
     return highlighted
-
-def attraction_svd(city, written_text):
-    # print("attraction svd called")
-    # Fetch descriptions of attractions from the specified city
-    if city == 'New York City':
-        city = 'New York'
-    elif city =='Washington DC':
-        city ='Washington District of Columbia'
-    query_sql = f"""SELECT * FROM attractions WHERE City = '{city}' AND Description NOT LIKE '%%hotel%%' AND Description NOT LIKE '%%INN%%'"""
-    attraction_data = mysql_engine.query_selector(query_sql)
-    attraction_data = attraction_data.all()
-    # Check if data is empty
-    if not attraction_data:
-        return json.dumps([])
-    # Extract descriptions and include the written_text as part of the corpus for vectorization
-    descriptions = [row[2] for row in attraction_data] + [written_text]
-    # Create TF-IDF vectorizer
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(descriptions)
-    # Perform SVD to reduce the dimensions
-    svd_model = TruncatedSVD(n_components=100)
-    reduced_matrix = svd_model.fit_transform(tfidf_matrix)
-    # The last row corresponds to the vector for written_text
-    written_vec = reduced_matrix[-1]
-    attraction_vecs = reduced_matrix[:-1]
-    # Compute cosine similarities
-    # denom = (norm(written_vec)*norm(attraction_vecs.T))
-    # print("denom", denom)
-    # if denom == 0:
-    #     similarities = 0
-    # else:
-    #     similarities = dot(written_vec, attraction_vecs.T)/denom    # Sort attractions based on similarity score
-    # print("similarities", similarities)
-    similarities = cosine_similarity([written_vec], attraction_vecs)[0]
-    sorted_indices = np.argsort(-similarities)
-    written_dict = process_text(written_text)
-    relevant_words = remove_keys_values(written_dict,['hotel', 'hotels', 'place', 'like', 'love', 'attractions', 'room', 'rooms', 'not'])
-    relevant_words = list(written_dict.keys())
-    top_n = 10
-    top_results = [attraction_data[i] for i in sorted_indices[:top_n]]
-    # Prepare the output
-    highlighted_results = []
-    for i in range(len(top_results)):
-        city, location_name, description = top_results[i]
-        highlighted_description = highlight_words(description, relevant_words)
-        highlighted_results.append((city, location_name, highlighted_description))
-
-    # Prepare the output
-    keys = ["City", "Location_Name", "Description"]
-    return json.dumps([dict(zip(keys, result)) for result in highlighted_results])
 
 def attraction_svd2(city, written_text):
     # Modify city names if needed
