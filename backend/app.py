@@ -303,8 +303,10 @@ def attraction_svd2(city, written_text):
 
 good_hotel_reviews = set()
 bad_hotel_reviews = set()
+good_hotel_names = set()
+bad_hotel_names = set()
 
-def rocchio(query_dict, good_reviews, bad_reviews, a=0.4, b=0.3, c=0.3):
+def rocchio(query_dict, good_reviews, bad_reviews, a=0.4, b=0.2, c=0.4):
     query_vector = np.array([query_dict[val] for val in query_dict])
     sum_good_vector = np.zeros(len(query_dict))
     sum_bad_vector = np.zeros(len(query_dict))
@@ -341,8 +343,12 @@ def rocchio(query_dict, good_reviews, bad_reviews, a=0.4, b=0.3, c=0.3):
 def reset_feedback():
     global good_hotel_reviews
     global bad_hotel_reviews
+    global good_hotel_names
+    global bad_hotel_names
     good_hotel_reviews = set()
     bad_hotel_reviews = set()
+    good_hotel_names = set()
+    bad_hotel_names = set()
 
 @app.route("/")
 def home():
@@ -395,7 +401,9 @@ def refine_search():
     attractions_dict = json.loads(attractions)
     combined_results = {
         "Recommended Hotels": hotels_dict,
-        "Recommended Attractions": attractions_dict
+        "Recommended Attractions": attractions_dict,
+        "Good_Hotel_Names": list(good_hotel_names),
+        "Bad_Hotel_Names": list(bad_hotel_names)
     }
     return jsonify(combined_results)
 
@@ -403,18 +411,23 @@ def refine_search():
 def handle_feedback():
     data = request.get_json()
     hotel_review = data.get('hotelReview')
+    hotel_name = data.get('hotelName')
     button_type = data.get('buttonType')
 
     if button_type == 'thumbsUp':
         if hotel_review in good_hotel_reviews:
             good_hotel_reviews.remove(hotel_review)
+            good_hotel_names.remove(hotel_name)
         else:
             good_hotel_reviews.add(hotel_review)
+            good_hotel_names.add(hotel_name)
     elif button_type == 'thumbsDown':
         if hotel_review in bad_hotel_reviews:
             bad_hotel_reviews.remove(hotel_review)
+            bad_hotel_names.remove(hotel_name)
         else:
             bad_hotel_reviews.add(hotel_review)
+            bad_hotel_names.add(hotel_name)
 
     return jsonify({"message": "Feedback received successfully"})
 

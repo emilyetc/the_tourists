@@ -116,6 +116,7 @@ function refine_search() {
 function handleFeedback(hotel, buttonType) {
   const feedbackData = {
     hotelReview: hotel.ratings,
+    hotelName: hotel.title,
     buttonType: buttonType,
   };
   fetch('/feedback', {
@@ -133,20 +134,6 @@ function handleFeedback(hotel, buttonType) {
     })
     .then(data => {
       console.log('Feedback sent successfully:', data);
-      // const thumbsUp = document.getElementById('thumbsUpButton');
-      // const thumbsDown = document.getElementById('thumbsDownButton');
-      // const thumbsUpStyle = window.getComputedStyle(thumbsUp);
-      // const thumbsDownStyle = window.getComputedStyle(thumbsDown);
-      // const thumbsUpOpacity = thumbsUpStyle.opacity;
-      // const thumbsDownOpacity = thumbsDownStyle.opacity;
-      // if(buttonType == 'thumbsUp'){
-      //   thumbsUp.style.opacity = 0.9;
-      //   thumbsDown.style.opacity = 0.5;
-      // }
-      // else if(buttonType == 'thumbsDown'){
-      //   thumbsUp.style.opacity = 0.5;
-      //   thumbsDown.style.opacity = 0.9;
-      // }
     })
     .catch(error => {
       console.error('Error:', error);
@@ -184,10 +171,16 @@ function displayResults(data) {
       descriptionElement.innerHTML = `<b>A reviewer said</b>: <br> <span>${item.ratings}</span>`;
       itemDiv.appendChild(descriptionElement);
 
+      const good_hotel_names = data.Good_Hotel_Names;
+      const bad_hotel_names = data.Bad_Hotel_Names;
+
       const thumbsUpButton = document.createElement('button');
       thumbsUpButton.id = 'thumbsUpButton';
       thumbsUpButton.classList.add('thumbs-up');
       thumbsUpButton.textContent = '👍';
+      if(!(typeof good_hotel_names === 'undefined') && good_hotel_names.includes(item.title)){
+        thumbsUpButton.style.opacity = 0.9;
+      }
       thumbsUpButton.addEventListener('click', function () {
         handleFeedback(item, 'thumbsUp');
         const thumbsUpStyle = window.getComputedStyle(thumbsUpButton);
@@ -204,6 +197,9 @@ function displayResults(data) {
       thumbsDownButton.id = 'thumbsDownButton';
       thumbsDownButton.classList.add('thumbs-down');
       thumbsDownButton.textContent = '👎';
+      if(!(typeof bad_hotel_names === 'undefined') && bad_hotel_names.includes(item.title)){
+        thumbsDownButton.style.opacity = 0.9;
+      }
       thumbsDownButton.addEventListener('click', function () {
         handleFeedback(item, 'thumbsDown');
         const thumbsDownStyle = window.getComputedStyle(thumbsDownButton);
