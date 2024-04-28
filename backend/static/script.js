@@ -63,7 +63,8 @@ amenitiesList.addEventListener('click', (event) => {
 //logic for submitting form information below
 function submit_form() {
   var city = document.getElementById("cityInput").value;
-  var promptDescription = document.getElementById("text_input").value;
+  var promptDescriptionHotel = document.getElementById("text_input_hotel").value;
+  var promptDescriptionAttraction = document.getElementById("text_input_attractions").value;
   var rankings = [];
   var items = document.querySelectorAll(".amenity-item .amenity-name");
   items.forEach(function (item) {
@@ -72,7 +73,8 @@ function submit_form() {
   var formData = new URLSearchParams();
   formData.append('city', city);
   formData.append('rankings', JSON.stringify(rankings));
-  formData.append('promptDescription', promptDescription);
+  formData.append('promptDescriptionHotel', promptDescriptionHotel);
+  formData.append('promptDescriptionAttraction', promptDescriptionAttraction);
   loadingIndicator.style.display = 'block';
   loadingIndicator.scrollIntoView({ block: 'start', behavior: 'smooth' });
   fetch("/find_places?" + formData.toString())
@@ -90,7 +92,7 @@ function refine_search() {
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = '';
   var city = document.getElementById("cityInput").value;
-  var promptDescription = document.getElementById("text_input").value;
+  var promptDescription = document.getElementById("text_input_hotel").value;
   var rankings = [];
   var items = document.querySelectorAll(".amenity-item .amenity-name");
   items.forEach(function (item) {

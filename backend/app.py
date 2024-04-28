@@ -28,19 +28,20 @@ os.environ["ROOT_PATH"] = os.path.abspath(os.path.join("..", os.curdir))
 LOCAL_MYSQL_USER = "root"
 LOCAL_MYSQL_USER_PASSWORD = "info4300"
 LOCAL_MYSQL_PORT = 3306
-LOCAL_MYSQL_DATABASE = "info4300"
+LOCAL_MYSQL_DATABASE = "globe_trotter"
 mysql_engine = MySQLDatabaseHandler(
     LOCAL_MYSQL_USER, LOCAL_MYSQL_USER_PASSWORD, LOCAL_MYSQL_PORT, LOCAL_MYSQL_DATABASE
 )
 
 # Path to init.sql file. This file can be replaced with your own file for testing on localhost, but do NOT move the init.sql file
-mysql_engine.load_file_into_db()
+# mysql_engine.load_file_into_db()
 
 app = Flask(__name__)
 CORS(app)
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
+nltk.download('omw-1.4')
 def process_text(written_text):
     """remove stop words from the written text, transforms relevant words into a dictionary"""
     filter_out = set(stopwords.words("english"))
@@ -324,11 +325,12 @@ def find_places():
     reset_feedback()
     city = request.args.get('city','')
     rankings = request.args.getlist('rankings')
-    prompt = request.args.get('promptDescription','')
-    if not city or not rankings or not prompt:
+    prompt = request.args.get('promptDescriptionHotel','')
+    attractprompt = request.args.get('promptDescriptionAttraction','')
+    if not city or not rankings or not prompt or not attractprompt:
         return jsonify({"error": "Missing required parameters"}), 400
     hotels = hotel_search(city, rankings, prompt)
-    attractions = attraction_svd2(city, prompt) 
+    attractions = attraction_svd2(city, attractprompt) 
     hotels_dict = json.loads(hotels)
     attractions_dict = json.loads(attractions)
     combined_results = {
