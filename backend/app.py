@@ -327,7 +327,7 @@ def find_places():
     prompt = request.args.get('promptDescription','')
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
-    hotels = hotel_search(city, rankings, None, prompt)
+    hotels = hotel_search(city, rankings, prompt)
     attractions = attraction_svd2(city, prompt) 
     hotels_dict = json.loads(hotels)
     attractions_dict = json.loads(attractions)
@@ -344,7 +344,7 @@ def refine_search():
     prompt = request.args.get('promptDescription','')
     if not city or not rankings or not prompt:
         return jsonify({"error": "Missing required parameters"}), 400
-    hotels = hotel_search(city, rankings, None, prompt)
+    hotels = hotel_search(city, rankings, prompt)
     attractions = attraction_svd2(city, prompt) 
     hotels_dict = json.loads(hotels)
     attractions_dict = json.loads(attractions)
